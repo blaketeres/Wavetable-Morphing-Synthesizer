@@ -30,10 +30,10 @@ int gCount = 0;
 int gAudioFramesPerAnalogFrame;
 
 // Initialize containers for wavetable voices
+float wavetableVoice0[2048];
 float wavetableVoice1[2048];
 float wavetableVoice2[2048];
 float wavetableVoice3[2048];
-float wavetableVoice4[2048];
 
 // Initialize control variables for potentiometer inputs
 int xCoordinate;
@@ -54,19 +54,45 @@ int resetBezierCurver;
 int voiceToggle;
 int flipBoundaries;
 
+int encoder0PinA = P8_15;
+int encoder0PinB = P8_16;
+int encoder0Pos = 0;
+int encoder0PinALast = LOW;
+int encoder0Status = LOW;
+
+int encoder1PinA = P8_18;
+int encoder1PinB = P8_27;
+int encoder1Pos = 0;
+int encoder1PinALast = LOW;
+int encoder1Status = LOW;
+
+int encoder2PinA = P8_28;
+int encoder2PinB = P8_29;
+int encoder2Pos = 0;
+int encoder2PinALast = LOW;
+int encoder2Status = LOW;
+
+int encoder3PinA = P8_30;
+int encoder3PinB = P9_12;
+int encoder3Pos = 0;
+int encoder3PinALast = LOW;
+int encoder3Status = LOW;
+
 int xBezier;
 int yBezier;
 int boundaryLeft;
 int boundaryRight;
 
-int removePotFlutter(int &potValue, int lastPotValue, int range, int max) {
+void removePotFlutter(int &potValue, int &lastPotValue, int range, int max) {
 		if (potValue == 0 || potValue == max) {
-			return potValue;
+			lastPotValue = potValue;
+			return;
 		}
 		if (potValue < (lastPotValue + range) && potValue > (lastPotValue - range)) {
-			return lastPotValue;
+			potValue = lastPotValue;
+			return;
 		}
-		return potValue;
+		lastPotValue = potValue;
 	}
 
 bool setup(BelaContext *context, void *userData)
@@ -92,7 +118,6 @@ bool setup(BelaContext *context, void *userData)
 	pinMode(context, 0, P8_10, INPUT);
 	pinMode(context, 0, P8_11, INPUT);
 	pinMode(context, 0, P8_12, INPUT);
-	pinMode(context, 0, P8_12, INPUT);
 	pinMode(context, 0, P8_15, INPUT);
 	pinMode(context, 0, P8_16, INPUT);
 	pinMode(context, 0, P8_18, INPUT);
@@ -107,7 +132,7 @@ bool setup(BelaContext *context, void *userData)
 
 void render(BelaContext *context, void *userData)
 {
-	for(unsigned int n = 0; n < context->audioFrames; n++) {
+	for(unsigned int n = 0; n < context->digitalFrames; n++) {
 		addWavetablePoint = digitalRead(context, 0, P8_07);
 		removeWavetablePoint = digitalRead(context, 0, P8_08);
 		pointSelect = digitalRead(context, 0, P8_09);
@@ -115,13 +140,53 @@ void render(BelaContext *context, void *userData)
 		voiceToggle = digitalRead(context, 0, P8_11);
 		flipBoundaries = digitalRead(context, 0, P8_12);
 		
+		encoder0Status = digitalRead(context, n, encoder0PinA);
+	    if ((encoder0PinALast == LOW) && (encoder0Status == HIGH)) {
+	      	if (digitalRead(context, n, encoder0PinB) == LOW) {
+	        	encoder0Pos--;
+	      	} else {
+	        	encoder0Pos++;
+	      	}
+	    }
+	    encoder0PinALast = encoder0Status;
+	    
+	    encoder1Status = digitalRead(context, n, encoder1PinA);
+	    if ((encoder1PinALast == LOW) && (encoder1Status == HIGH)) {
+	      	if (digitalRead(context, n, encoder1PinB) == LOW) {
+	        	encoder1Pos--;
+	      	} else {
+	        	encoder1Pos++;
+	      	}
+	    }
+	    encoder1PinALast = encoder1Status;
+	    
+	    encoder2Status = digitalRead(context, n, encoder2PinA);
+	    if ((encoder2PinALast == LOW) && (encoder2Status == HIGH)) {
+	      	if (digitalRead(context, n, encoder2PinB) == LOW) {
+	        	encoder2Pos--;
+	      	} else {
+	        	encoder2Pos++;
+	      	}
+	    }
+	    encoder2PinALast = encoder2Status;
+	    
+	    encoder3Status = digitalRead(context, n, encoder3PinA);
+	    if ((encoder3PinALast == LOW) && (encoder3Status == HIGH)) {
+	      	if (digitalRead(context, n, encoder3PinB) == LOW) {
+	        	encoder3Pos--;
+	      	} else {
+	        	encoder3Pos++;
+	      	}
+	    }
+	    encoder3PinALast = encoder3Status;
+		
 		if(!(n % gAudioFramesPerAnalogFrame)) {
-			int x = (int)map(analogRead(context, n/gAudioFramesPerAnalogFrame, xCoordinateChannel), 0, 1, 0, 2048);
-			xCoordinate = removePotFlutter(x, lastXCoordinate, 5, 2047);
-			int y = (int)map(analogRead(context, n/gAudioFramesPerAnalogFrame, yCoordinateChannel), 0, 1, 0, 1024);
-			yCoordinate = removePotFlutter(y, lastYCoordinate, 5, 1023);
-			int index = (int)map(analogRead(context, n/gAudioFramesPerAnalogFrame, indexSelectorChannel), 0, 1, 0, 2048);
-			indexSelector = removePotFlutter(index, lastIndexSelector, 5, 2047);
+			xCoordinate = (int)map(analogRead(context, n/gAudioFramesPerAnalogFrame, xCoordinateChannel), 0, 1, 0, 2048);
+			removePotFlutter(xCoordinate, lastXCoordinate, 10, 2047);
+			yCoordinate = (int)map(analogRead(context, n/gAudioFramesPerAnalogFrame, yCoordinateChannel), 0, 1, 0, 1024);
+			removePotFlutter(yCoordinate, lastYCoordinate, 10, 1023);
+			indexSelector = (int)map(analogRead(context, n/gAudioFramesPerAnalogFrame, indexSelectorChannel), 0, 1, 0, 2048);
+			removePotFlutter(indexSelector, lastIndexSelector, 10, 2047);
 		}
 		
 		gCount++;
@@ -129,22 +194,16 @@ void render(BelaContext *context, void *userData)
 		// Print a message every second indicating the number of seconds elapsed
 		if(gCount % (int)(context->audioSampleRate*gInterval) == 0) {
 		    gSecondsElapsed += gInterval;
-		    rt_printf("Pot Status: %d\n", pointSelect);
-		
-		for(unsigned int ch = 0; ch < context->audioInChannels; ch++){
-			audioWrite(context, n, ch, audioRead(context, n, ch));
-			}
+		    rt_printf("Encoder Status: %d\n", encoder3Pos);
 		}
 	}
-
-	// Same with analog channels
-	for(unsigned int n = 0; n < context->analogFrames; n++) {
-		for(unsigned int ch = 0; ch < context->analogInChannels; ch++) {
+	
+	
+	for(unsigned int n = 0; n < context->audioFrames; n++) {
+		for(unsigned int channel = 0; channel < context->audioOutChannels; channel++) {
+			//audioWrite(context, n, channel, out);
 		}
 	}
-	lastXCoordinate = xCoordinate;
-	lastYCoordinate = yCoordinate;
-	lastIndexSelector = indexSelector;
 }
 
 void cleanup(BelaContext *context, void *userData)
