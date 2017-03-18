@@ -84,16 +84,29 @@ int boundaryLeft;
 int boundaryRight;
 
 void removePotFlutter(int &potValue, int &lastPotValue, int range, int max) {
-		if (potValue == 0 || potValue == max) {
-			lastPotValue = potValue;
-			return;
-		}
-		if (potValue < (lastPotValue + range) && potValue > (lastPotValue - range)) {
-			potValue = lastPotValue;
-			return;
-		}
+	if (potValue == 0 || potValue == max) {
 		lastPotValue = potValue;
+		return;
 	}
+	if (potValue < (lastPotValue + range) && potValue > (lastPotValue - range)) {
+		potValue = lastPotValue;
+		return;
+	}
+	lastPotValue = potValue;
+}
+	
+void handleEncoder(BelaContext *context, int encoderStatus, int encoderPinA, int &encoderPinALast, int encoderPinB, int &encoderPos, int n) {
+	encoderStatus = digitalRead(context, n, encoderPinA);
+	if ((encoderPinALast == LOW) && (encoderStatus == HIGH)) {
+		if (digitalRead(context, n, encoderPinB) == LOW) {
+			encoderPos--;
+	    }
+	    else {
+			encoderPos++;
+		}
+	}
+	encoderPinALast = encoderStatus;
+}
 
 bool setup(BelaContext *context, void *userData)
 {
@@ -140,45 +153,10 @@ void render(BelaContext *context, void *userData)
 		voiceToggle = digitalRead(context, 0, P8_11);
 		flipBoundaries = digitalRead(context, 0, P8_12);
 		
-		encoder0Status = digitalRead(context, n, encoder0PinA);
-	    if ((encoder0PinALast == LOW) && (encoder0Status == HIGH)) {
-	      	if (digitalRead(context, n, encoder0PinB) == LOW) {
-	        	encoder0Pos--;
-	      	} else {
-	        	encoder0Pos++;
-	      	}
-	    }
-	    encoder0PinALast = encoder0Status;
-	    
-	    encoder1Status = digitalRead(context, n, encoder1PinA);
-	    if ((encoder1PinALast == LOW) && (encoder1Status == HIGH)) {
-	      	if (digitalRead(context, n, encoder1PinB) == LOW) {
-	        	encoder1Pos--;
-	      	} else {
-	        	encoder1Pos++;
-	      	}
-	    }
-	    encoder1PinALast = encoder1Status;
-	    
-	    encoder2Status = digitalRead(context, n, encoder2PinA);
-	    if ((encoder2PinALast == LOW) && (encoder2Status == HIGH)) {
-	      	if (digitalRead(context, n, encoder2PinB) == LOW) {
-	        	encoder2Pos--;
-	      	} else {
-	        	encoder2Pos++;
-	      	}
-	    }
-	    encoder2PinALast = encoder2Status;
-	    
-	    encoder3Status = digitalRead(context, n, encoder3PinA);
-	    if ((encoder3PinALast == LOW) && (encoder3Status == HIGH)) {
-	      	if (digitalRead(context, n, encoder3PinB) == LOW) {
-	        	encoder3Pos--;
-	      	} else {
-	        	encoder3Pos++;
-	      	}
-	    }
-	    encoder3PinALast = encoder3Status;
+		handleEncoder(context, encoder0Status, encoder0PinA, encoder0PinALast, encoder0PinB, encoder0Pos, n);
+		handleEncoder(context, encoder1Status, encoder1PinA, encoder1PinALast, encoder1PinB, encoder1Pos, n);
+		handleEncoder(context, encoder2Status, encoder2PinA, encoder2PinALast, encoder2PinB, encoder2Pos, n);
+		handleEncoder(context, encoder3Status, encoder3PinA, encoder3PinALast, encoder3PinB, encoder3Pos, n);
 		
 		if(!(n % gAudioFramesPerAnalogFrame)) {
 			xCoordinate = (int)map(analogRead(context, n/gAudioFramesPerAnalogFrame, xCoordinateChannel), 0, 1, 0, 2048);
