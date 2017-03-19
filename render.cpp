@@ -23,6 +23,10 @@ The Bela software is distributed under the GNU Lesser General Public License
 
 #include <Bela.h>
 #include <cmath>
+#include <math_neon.h>
+#include "wavetable.h"
+
+#define WAVETABLE_SIZE 4096
 
 float gInterval = 1;
 float gSecondsElapsed = 0;
@@ -30,21 +34,49 @@ int gCount = 0;
 int gAudioFramesPerAnalogFrame;
 
 // Initialize containers for wavetable voices
-float wavetableVoice0[2048];
-float wavetableVoice1[2048];
-float wavetableVoice2[2048];
-float wavetableVoice3[2048];
+float wavetableVoice0[WAVETABLE_SIZE];
+float voice0Index = 0;
+float wavetableVoice1[WAVETABLE_SIZE];
+float voice1Index = 0;
+float wavetableVoice2[WAVETABLE_SIZE];
+float voice2Index = 0;
+float wavetableVoice3[WAVETABLE_SIZE];
+float voice3Index = 0;
+
+wavetable voice0;
+wavetable voice1;
+wavetable voice2;
+wavetable voice3;
 
 // Initialize control variables for potentiometer inputs
 int xCoordinate;
 int lastXCoordinate;
 int xCoordinateChannel = 0;
+
 int yCoordinate;
 int lastYCoordinate;
 int yCoordinateChannel = 1;
+
 int indexSelector;
 int lastIndexSelector;
 int indexSelectorChannel = 2;
+
+float voice0Pitch;
+float voice0PitchLast;
+int voice0PitchChannel = 3;
+
+float voice1Pitch;
+float voice1PitchLast;
+int voice1PitchChannel = 4;
+
+float voice2Pitch;
+float voice2PitchLast;
+int voice2PitchChannel = 5;
+
+float voice3Pitch;
+float voice3PitchLast;
+int voice3PitchChannel = 6;
+
 
 // Initialize control vairables for button inputs
 int addWavetablePoint;
@@ -53,6 +85,7 @@ int pointSelect;
 int resetBezierCurver;
 int voiceToggle;
 int flipBoundaries;
+int voiceOn;
 
 int encoder0PinA = P8_15;
 int encoder0PinB = P8_16;
@@ -94,6 +127,18 @@ void removePotFlutter(int &potValue, int &lastPotValue, int range, int max) {
 	}
 	lastPotValue = potValue;
 }
+
+void removePotFlutterFloat(float &potValue, float &lastPotValue, float range) {
+	if (potValue == 0 || potValue == 0.99999) {
+		lastPotValue = potValue;
+		return;
+	}
+	if (potValue < (lastPotValue + range) && potValue > (lastPotValue - range)) {
+		potValue = lastPotValue;
+		return;
+	}
+	lastPotValue = potValue;
+}
 	
 void handleEncoder(BelaContext *context, int encoderStatus, int encoderPinA, int &encoderPinALast, int encoderPinB, int &encoderPos, int n) {
 	encoderStatus = digitalRead(context, n, encoderPinA);
@@ -122,6 +167,23 @@ bool setup(BelaContext *context, void *userData)
 		printf("Error: for this project, you need the same number of input and output channels.\n");
 		return false;
 	}
+	
+	voice0.generateSawtooth();
+	voice1.generateSquare();
+	voice2.generateTriangle();
+	voice3.generateSine();
+	
+	/*
+	float sawtoothInterval = 2.0 / (float)WAVETABLE_SIZE;
+	float sawtoothValue = -1.0;
+	for (int i = 0; i < WAVETABLE_SIZE; i++) {
+		sawtoothValue += sawtoothInterval;
+		wavetableVoice0[i] = sawtoothValue;
+		wavetableVoice1[i] = sawtoothValue;
+		wavetableVoice2[i] = sawtoothValue;
+		wavetableVoice3[i] = sawtoothValue;
+	}
+	*/
 
 	gAudioFramesPerAnalogFrame = context->audioFrames / context->analogFrames;
 	
@@ -139,19 +201,29 @@ bool setup(BelaContext *context, void *userData)
 	pinMode(context, 0, P8_29, INPUT);
 	pinMode(context, 0, P8_30, INPUT);
 	pinMode(context, 0, P9_12, INPUT);
+	pinMode(context, 0, P9_14, INPUT);
+	
+	voiceOn = LOW;
 	
 	return true;
 }
 
 void render(BelaContext *context, void *userData)
 {
-	for(unsigned int n = 0; n < context->digitalFrames; n++) {
+	float out;
+	float out0;
+	float out1;
+	float out2;
+	float out3;
+	float gain;
+	for(unsigned int n = 0; n < context->audioFrames; n++) {
 		addWavetablePoint = digitalRead(context, 0, P8_07);
 		removeWavetablePoint = digitalRead(context, 0, P8_08);
 		pointSelect = digitalRead(context, 0, P8_09);
 		resetBezierCurver = digitalRead(context, 0, P8_10);
 		voiceToggle = digitalRead(context, 0, P8_11);
 		flipBoundaries = digitalRead(context, 0, P8_12);
+		voiceOn = digitalRead(context, 0, P9_14);
 		
 		handleEncoder(context, encoder0Status, encoder0PinA, encoder0PinALast, encoder0PinB, encoder0Pos, n);
 		handleEncoder(context, encoder1Status, encoder1PinA, encoder1PinALast, encoder1PinB, encoder1Pos, n);
@@ -159,14 +231,33 @@ void render(BelaContext *context, void *userData)
 		handleEncoder(context, encoder3Status, encoder3PinA, encoder3PinALast, encoder3PinB, encoder3Pos, n);
 		
 		if(!(n % gAudioFramesPerAnalogFrame)) {
-			xCoordinate = (int)map(analogRead(context, n/gAudioFramesPerAnalogFrame, xCoordinateChannel), 0, 1, 0, 2048);
-			removePotFlutter(xCoordinate, lastXCoordinate, 10, 2047);
+			xCoordinate = (int)map(analogRead(context, n/gAudioFramesPerAnalogFrame, xCoordinateChannel), 0, 1, 0, WAVETABLE_SIZE);
+			removePotFlutter(xCoordinate, lastXCoordinate, 10, WAVETABLE_SIZE - 1);
+			
 			yCoordinate = (int)map(analogRead(context, n/gAudioFramesPerAnalogFrame, yCoordinateChannel), 0, 1, 0, 1024);
 			removePotFlutter(yCoordinate, lastYCoordinate, 10, 1023);
-			indexSelector = (int)map(analogRead(context, n/gAudioFramesPerAnalogFrame, indexSelectorChannel), 0, 1, 0, 2048);
-			removePotFlutter(indexSelector, lastIndexSelector, 10, 2047);
+			
+			indexSelector = (int)map(analogRead(context, n/gAudioFramesPerAnalogFrame, indexSelectorChannel), 0, 1, 2, WAVETABLE_SIZE);
+			removePotFlutter(indexSelector, lastIndexSelector, 10, WAVETABLE_SIZE - 1);
+			
+			voice0Pitch = analogRead(context, n/gAudioFramesPerAnalogFrame, voice0PitchChannel);
+			removePotFlutterFloat(voice0Pitch, voice0PitchLast, 0.005);
+			voice0Pitch = powf_neon(voice0Pitch + 1.0, 11.0);
+			
+			voice1Pitch = analogRead(context, n/gAudioFramesPerAnalogFrame, voice1PitchChannel);
+			removePotFlutterFloat(voice1Pitch, voice1PitchLast, 0.005);
+			voice1Pitch = powf_neon(voice1Pitch + 1.0, 11.0);
+			
+			voice2Pitch = analogRead(context, n/gAudioFramesPerAnalogFrame, voice2PitchChannel);
+			removePotFlutterFloat(voice2Pitch, voice2PitchLast, 0.005);
+			voice2Pitch = powf_neon(voice2Pitch + 1.0, 11.0);
+			
+			voice3Pitch = analogRead(context, n/gAudioFramesPerAnalogFrame, voice3PitchChannel);
+			removePotFlutterFloat(voice3Pitch, voice3PitchLast, 0.005);
+			voice3Pitch = powf_neon(voice3Pitch + 1.0, 11.0);
 		}
 		
+		/*
 		gCount++;
 		
 		// Print a message every second indicating the number of seconds elapsed
@@ -174,12 +265,37 @@ void render(BelaContext *context, void *userData)
 		    gSecondsElapsed += gInterval;
 		    rt_printf("Encoder Status: %d\n", encoder3Pos);
 		}
-	}
-	
-	
-	for(unsigned int n = 0; n < context->audioFrames; n++) {
+		*/
+		
+		out0 = voice0.wavetable0[(int)(voice0Index)];
+		out1 = voice1.wavetable0[(int)(voice1Index)];
+		out2 = voice2.wavetable0[(int)(voice2Index)];
+		out3 = voice3.wavetable0[(int)(voice3Index)];
+		voice0Index += voice0Pitch;
+		voice1Index += voice1Pitch;
+		voice2Index += voice2Pitch;
+		voice3Index += voice3Pitch;
+		if (voice0Index >= WAVETABLE_SIZE) {
+			voice0Index = voice0Index - WAVETABLE_SIZE;
+		}
+		if (voice1Index >= WAVETABLE_SIZE) {
+			voice1Index = voice1Index - WAVETABLE_SIZE;
+		}
+		if (voice2Index >= WAVETABLE_SIZE) {
+			voice2Index = voice2Index - WAVETABLE_SIZE;
+		}
+		if (voice3Index >= WAVETABLE_SIZE) {
+			voice3Index = voice3Index - WAVETABLE_SIZE;
+		}
+		if (voiceOn == HIGH) {
+			gain = 0.25;
+		}
+		if (voiceOn == LOW) {
+			gain = 0.25;
+		}
+		out = (out0 + out1 + out2 + out3) * gain;
 		for(unsigned int channel = 0; channel < context->audioOutChannels; channel++) {
-			//audioWrite(context, n, channel, out);
+			audioWrite(context, n, channel, out);
 		}
 	}
 }
@@ -189,53 +305,3 @@ void cleanup(BelaContext *context, void *userData)
 
 }
 
-/**
-\example passthrough/render.cpp
-
-Audio and analog passthrough: input to output
------------------------------------------
-
-This sketch demonstrates how to read from and write to the audio and analog input and output buffers.
-
-In `render()` you'll see a nested for loop structure. You'll see this in all Bela projects. 
-The first for loop cycles through `audioFrames`, the second through 
-`audioInChannels` (in this case left 0 and right 1).
-
-You can access any information about current audio and sensor settings like this: 
-`context->name_of_item`. For example `context->audioInChannels` returns current number of input channels,
-`context->audioFrames` returns the current number of audio frames, 
-`context->audioSampleRate` returns the audio sample rate.
-
-You can look at all the information you can access in ::BelaContext.
-
-Reading and writing from the audio buffers
-------------------------------------------
-
-The simplest way to read samples from the audio input buffer is with
-`audioRead()` which we pass three arguments: context, current audio 
-frame and current channel. In this example we have 
-`audioRead(context, n, ch)` where both `n` and `ch` are provided by 
-the nested for loop structure.
-
-We can write samples to the audio output buffer in a similar way using 
-`audioWrite()`. This has a fourth argument which is the value of to output.
-For example `audioWrite(context, n, ch, value_to_output)`.
-
-Reading and writing from the analog buffers
--------------------------------------------
-
-The same is true for `analogRead()` and `analogWrite()`.
-
-Note that for the analog channels we write to and read from the buffers in a separate set 
-of nested for loops. This is because the they are sampled at half audio rate by default. 
-The first of these for loops cycles through `analogFrames`, the second through
-`analogInChannels`.
-
-By setting `audioWriteFrame(context, n, ch, audioReadFrame(context, n, ch))` and
-`analogWrite(context, n, ch, analogReadFrame(context, n, ch))` we have a simple 
-passthrough of audio input to output and analog input to output.
-
-
-It is also possible to address the buffers directly, for example: 
-`context->audioOut[n * context->audioOutChannels + ch]`.
-*/
