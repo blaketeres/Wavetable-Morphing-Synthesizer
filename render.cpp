@@ -26,8 +26,6 @@ The Bela software is distributed under the GNU Lesser General Public License
 #include <math_neon.h>
 #include "wavetable.h"
 
-#define WAVETABLE_SIZE 4096
-
 float gInterval = 1;
 float gSecondsElapsed = 0;
 int gCount = 0;
@@ -47,6 +45,11 @@ wavetable voice0;
 wavetable voice1;
 wavetable voice2;
 wavetable voice3;
+float* currentWavetableVoice0;
+float* currentWavetableVoice1;
+float* currentWavetableVoice2;
+float* currentWavetableVoice3;
+
 
 // Initialize control variables for potentiometer inputs
 int xCoordinate;
@@ -60,6 +63,8 @@ int yCoordinateChannel = 1;
 int indexSelector;
 int lastIndexSelector;
 int indexSelectorChannel = 2;
+
+
 
 float voice0Pitch;
 float voice0PitchLast;
@@ -78,7 +83,7 @@ float voice3PitchLast;
 int voice3PitchChannel = 6;
 
 
-// Initialize control vairables for button inputs
+// Initialize control variables for button inputs
 int addWavetablePoint;
 int removeWavetablePoint;
 int pointSelect;
@@ -153,6 +158,28 @@ void handleEncoder(BelaContext *context, int encoderStatus, int encoderPinA, int
 	encoderPinALast = encoderStatus;
 }
 
+float linearInterpolate(float a, float b, float index) {
+	float percent = index - (int)index;
+	float difference = b - a;
+	float toAdd = percent * difference;
+	return (a + toAdd);
+}
+
+int chooseWaveTable(float pitchValue) {
+	float cutoffFreq = 44100 / (WAVETABLE_SIZE / pitchValue);
+	if (cutoffFreq < 20) return 0;
+	if (cutoffFreq < 40) return 1;
+	if (cutoffFreq < 80) return 2;
+	if (cutoffFreq < 160) return 3;
+	if (cutoffFreq < 320) return 4;
+	if (cutoffFreq < 640) return 5;
+	if (cutoffFreq < 1280) return 6;
+	if (cutoffFreq < 2560) return 7;
+	if (cutoffFreq < 5120) return 8;
+	if (cutoffFreq < 10240) return 9;
+	return 10;
+}
+
 bool setup(BelaContext *context, void *userData)
 {
 	// Check if analog channels are enabled
@@ -173,18 +200,6 @@ bool setup(BelaContext *context, void *userData)
 	voice2.generateTriangle();
 	voice3.generateSine();
 	
-	/*
-	float sawtoothInterval = 2.0 / (float)WAVETABLE_SIZE;
-	float sawtoothValue = -1.0;
-	for (int i = 0; i < WAVETABLE_SIZE; i++) {
-		sawtoothValue += sawtoothInterval;
-		wavetableVoice0[i] = sawtoothValue;
-		wavetableVoice1[i] = sawtoothValue;
-		wavetableVoice2[i] = sawtoothValue;
-		wavetableVoice3[i] = sawtoothValue;
-	}
-	*/
-
 	gAudioFramesPerAnalogFrame = context->audioFrames / context->analogFrames;
 	
 	pinMode(context, 0, P8_07, INPUT);
@@ -216,6 +231,7 @@ void render(BelaContext *context, void *userData)
 	float out2;
 	float out3;
 	float gain;
+	
 	for(unsigned int n = 0; n < context->audioFrames; n++) {
 		addWavetablePoint = digitalRead(context, 0, P8_07);
 		removeWavetablePoint = digitalRead(context, 0, P8_08);
@@ -240,37 +256,34 @@ void render(BelaContext *context, void *userData)
 			indexSelector = (int)map(analogRead(context, n/gAudioFramesPerAnalogFrame, indexSelectorChannel), 0, 1, 2, WAVETABLE_SIZE);
 			removePotFlutter(indexSelector, lastIndexSelector, 10, WAVETABLE_SIZE - 1);
 			
+			
+			
 			voice0Pitch = analogRead(context, n/gAudioFramesPerAnalogFrame, voice0PitchChannel);
-			removePotFlutterFloat(voice0Pitch, voice0PitchLast, 0.005);
+			//removePotFlutterFloat(voice0Pitch, voice0PitchLast, 0.005);
 			voice0Pitch = powf_neon(voice0Pitch + 1.0, 11.0);
+			currentWavetableVoice0 = voice0.wavetableContainer[chooseWaveTable(voice0Pitch)];
 			
 			voice1Pitch = analogRead(context, n/gAudioFramesPerAnalogFrame, voice1PitchChannel);
-			removePotFlutterFloat(voice1Pitch, voice1PitchLast, 0.005);
+			//removePotFlutterFloat(voice1Pitch, voice1PitchLast, 0.005);
 			voice1Pitch = powf_neon(voice1Pitch + 1.0, 11.0);
+			currentWavetableVoice1 = voice1.wavetableContainer[chooseWaveTable(voice1Pitch)];
 			
 			voice2Pitch = analogRead(context, n/gAudioFramesPerAnalogFrame, voice2PitchChannel);
-			removePotFlutterFloat(voice2Pitch, voice2PitchLast, 0.005);
+			//removePotFlutterFloat(voice2Pitch, voice2PitchLast, 0.005);
 			voice2Pitch = powf_neon(voice2Pitch + 1.0, 11.0);
+			currentWavetableVoice2 = voice2.wavetableContainer[chooseWaveTable(voice2Pitch)];
 			
 			voice3Pitch = analogRead(context, n/gAudioFramesPerAnalogFrame, voice3PitchChannel);
-			removePotFlutterFloat(voice3Pitch, voice3PitchLast, 0.005);
+			//removePotFlutterFloat(voice3Pitch, voice3PitchLast, 0.005);
 			voice3Pitch = powf_neon(voice3Pitch + 1.0, 11.0);
+			currentWavetableVoice3 = voice3.wavetableContainer[chooseWaveTable(voice3Pitch)];
 		}
 		
-		/*
-		gCount++;
 		
-		// Print a message every second indicating the number of seconds elapsed
-		if(gCount % (int)(context->audioSampleRate*gInterval) == 0) {
-		    gSecondsElapsed += gInterval;
-		    rt_printf("Encoder Status: %d\n", encoder3Pos);
-		}
-		*/
-		
-		out0 = voice0.wavetable0[(int)(voice0Index)];
-		out1 = voice1.wavetable0[(int)(voice1Index)];
-		out2 = voice2.wavetable0[(int)(voice2Index)];
-		out3 = voice3.wavetable0[(int)(voice3Index)];
+		out0 = linearInterpolate(currentWavetableVoice0[(int)voice0Index], voice0.wavetable0[(int)(voice0Index + 1) % WAVETABLE_SIZE], voice0Index);
+		out1 = linearInterpolate(currentWavetableVoice1[(int)voice1Index], voice1.wavetable0[(int)(voice1Index + 1) % WAVETABLE_SIZE], voice1Index);
+		out2 = linearInterpolate(currentWavetableVoice2[(int)voice2Index], voice2.wavetable0[(int)(voice2Index + 1) % WAVETABLE_SIZE], voice2Index);
+		out3 = linearInterpolate(currentWavetableVoice3[(int)voice3Index], voice3.wavetable0[(int)(voice3Index + 1) % WAVETABLE_SIZE], voice3Index);
 		voice0Index += voice0Pitch;
 		voice1Index += voice1Pitch;
 		voice2Index += voice2Pitch;
