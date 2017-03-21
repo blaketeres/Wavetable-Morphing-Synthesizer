@@ -11,13 +11,14 @@ class wavetable
 public:
 	wavetable();
 	
-	void antiAliasWavetables(float baseTable[]);
-	void lowPassFilter(float rawData[], float *output, float LPF_Beta);
+	void antiAliasWavetables();
+	void lowPassFilter(float rawData[], float* output, float LPF_Beta);
 	void generateSawtooth();
 	void generateSquare();
 	void generateTriangle();
 	void generateSine();
-	void butterworthLowpassFilter0100SixthOrder(const double src[], double dest[], int size);
+	void butterworthLowpassFilter0100SixthOrder(const float src[], float* dest, int size);
+	void fft(int N, float *ar, float *ai);
 	
 	float wavetable0[WAVETABLE_SIZE];
 	float wavetable1[WAVETABLE_SIZE];
@@ -30,7 +31,7 @@ public:
 	float wavetable8[WAVETABLE_SIZE];
 	float wavetable9[WAVETABLE_SIZE];
 	float wavetable10[WAVETABLE_SIZE];
-	float *wavetableContainer[NUM_WAVETABLES_PER_VOICE];
+	float* wavetableContainer[NUM_WAVETABLES_PER_VOICE];
 	
 	int wavetable0ReadPointer;
 	int wavetable0WritePointer;
