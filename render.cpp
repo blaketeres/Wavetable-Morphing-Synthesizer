@@ -24,7 +24,10 @@ The Bela software is distributed under the GNU Lesser General Public License
 #include <Bela.h>
 #include <cmath>
 #include <math_neon.h>
+#include <Scope.h>
 #include "wavetable.h"
+
+Scope scope;
 
 // timer stuff for printing/debugging
 float gInterval = 1.5;
@@ -121,6 +124,7 @@ int yBezier;
 int boundaryLeft;
 int boundaryRight;
 
+
 void removePotFlutter(int &potValue, int &lastPotValue, int range, int max) {
 	if (potValue == 0 || potValue == max) {
 		lastPotValue = potValue;
@@ -197,6 +201,8 @@ bool setup(BelaContext *context, void *userData)
 		return false;
 	}
 	
+	scope.setup(1, context->audioSampleRate);
+	
 	voice0.generateSawtooth();
 	voice1.generateSquare();
 	voice2.generateTriangle();
@@ -258,11 +264,9 @@ void render(BelaContext *context, void *userData)
 			indexSelector = (int)map(analogRead(context, n/gAudioFramesPerAnalogFrame, indexSelectorChannel), 0, 1, 2, WAVETABLE_SIZE);
 			removePotFlutter(indexSelector, lastIndexSelector, 10, WAVETABLE_SIZE - 1);
 			
-			
-			
 			voice0Pitch = analogRead(context, n/gAudioFramesPerAnalogFrame, voice0PitchChannel);
 			//removePotFlutterFloat(voice0Pitch, voice0PitchLast, 0.001);
-			voice0Pitch = powf_neon(voice0Pitch + 1.0, 11.0);
+			voice0Pitch = powf_neon(voice0Pitch + 1, 11.0);
 			currentWavetableVoice0 = voice0.wavetableContainer[chooseWaveTable(voice0Pitch)];
 			
 			voice1Pitch = analogRead(context, n/gAudioFramesPerAnalogFrame, voice1PitchChannel);
@@ -290,26 +294,19 @@ void render(BelaContext *context, void *userData)
 		voice2Index += voice2Pitch;
 		voice3Index += voice3Pitch;
 		
-		if (voice0Index >= WAVETABLE_SIZE) {
-			voice0Index = voice0Index - WAVETABLE_SIZE;
-		}
-		if (voice1Index >= WAVETABLE_SIZE) {
-			voice1Index = voice1Index - WAVETABLE_SIZE;
-		}
-		if (voice2Index >= WAVETABLE_SIZE) {
-			voice2Index = voice2Index - WAVETABLE_SIZE;
-		}
-		if (voice3Index >= WAVETABLE_SIZE) {
-			voice3Index = voice3Index - WAVETABLE_SIZE;
-		}
-		if (voiceOn == HIGH) {
-			gain = 0.25;
-		}
-		if (voiceOn == LOW) {
-			gain = 0.25;
-		}
+		if (voice0Index >= WAVETABLE_SIZE) voice0Index = voice0Index - WAVETABLE_SIZE;
+		if (voice1Index >= WAVETABLE_SIZE) voice1Index = voice1Index - WAVETABLE_SIZE;
+		if (voice2Index >= WAVETABLE_SIZE) voice2Index = voice2Index - WAVETABLE_SIZE;
+		if (voice3Index >= WAVETABLE_SIZE) voice3Index = voice3Index - WAVETABLE_SIZE;
+		if (voiceOn == HIGH) gain = 0.25;
+		if (voiceOn == LOW)  gain = 0.0;
+		
+		
 		//out = (out0 + out1 + out2 + out3) * gain;
+		
 		out = out3 * 0.25;
+		
+		//scope.log(out);
 		for(unsigned int channel = 0; channel < context->audioOutChannels; channel++) {
 			audioWrite(context, n, channel, out);
 		}
@@ -319,8 +316,9 @@ void render(BelaContext *context, void *userData)
 		
 		// Print a message every second indicating the number of seconds elapsed
 		if(gCount % (int)(context->audioSampleRate*gInterval) == 0) {
+			//scope.trigger();
 		    gSecondsElapsed += gInterval;
-		    rt_printf("Frequency: %f\n", 44100.0 / (WAVETABLE_SIZE / voice3Pitch));
+		    rt_printf("Frequency: %f\n", voice3Pitch);
 		    rt_printf("Wavetable: %d", chooseWaveTable(voice3Pitch));
 		}
 	}
