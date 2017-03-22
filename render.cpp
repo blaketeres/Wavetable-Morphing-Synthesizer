@@ -160,13 +160,6 @@ void handleEncoder(BelaContext *context, int encoderStatus, int encoderPinA, int
 	encoderPinALast = encoderStatus;
 }
 
-float linearInterpolate(float a, float b, float index) {
-	float fraction = index - (int)index;
-	float difference = b - a;
-	float toAdd = fraction * difference;
-	return (a + toAdd);
-}
-
 
 bool setup(BelaContext *context, void *userData)
 {
@@ -184,7 +177,6 @@ bool setup(BelaContext *context, void *userData)
 	}
 	scope.setup(1, context->audioSampleRate);
 	gAudioFramesPerAnalogFrame = context->audioFrames / context->analogFrames;
-	
 	
 	voice0Index = 0;
 	voice1Index = 0;
@@ -267,46 +259,40 @@ void render(BelaContext *context, void *userData)
 			currentWavetableVoice3 = voice3.chooseWaveTable(voice3Pitch);
 		}
 		
-		out0 = voice0.linearInterpolate(currentWavetableVoice0, voice0Index);
-		out1 = voice1.linearInterpolate(currentWavetableVoice1, voice1Index);
-		out2 = voice2.linearInterpolate(currentWavetableVoice2, voice2Index);
-		out3 = voice3.linearInterpolate(currentWavetableVoice3, voice3Index);
-		//out0 = linearInterpolate(currentWavetableVoice0[(int)voice0Index], currentWavetableVoice0[(int)(voice0Index + 1) % WAVETABLE_SIZE], voice0Index);
-		//out1 = linearInterpolate(currentWavetableVoice1[(int)voice1Index], currentWavetableVoice1[(int)(voice1Index + 1) % WAVETABLE_SIZE], voice1Index);
-		//out2 = linearInterpolate(currentWavetableVoice2[(int)voice2Index], currentWavetableVoice2[(int)(voice2Index + 1) % WAVETABLE_SIZE], voice2Index);
-		//out3 = linearInterpolate(currentWavetableVoice3[(int)voice3Index], currentWavetableVoice3[(int)(voice3Index + 1) % WAVETABLE_SIZE], voice3Index);
-		voice0Index += voice0Pitch;
-		voice1Index += voice1Pitch;
-		voice2Index += voice2Pitch;
-		voice3Index += voice3Pitch;
+		out0 = voice0.linearInterpolate(currentWavetableVoice0, voice0.readIndex);
+		out1 = voice1.linearInterpolate(currentWavetableVoice1, voice1.readIndex);
+		out2 = voice2.linearInterpolate(currentWavetableVoice2, voice2.readIndex);
+		out3 = voice3.linearInterpolate(currentWavetableVoice3, voice3.readIndex);
+		voice0.readIndex += voice0Pitch;
+		voice1.readIndex += voice1Pitch;
+		voice2.readIndex += voice2Pitch;
+		voice3.readIndex += voice3Pitch;
 		
-		if (voice0Index >= WAVETABLE_SIZE) voice0Index = voice0Index - WAVETABLE_SIZE;
-		if (voice1Index >= WAVETABLE_SIZE) voice1Index = voice1Index - WAVETABLE_SIZE;
-		if (voice2Index >= WAVETABLE_SIZE) voice2Index = voice2Index - WAVETABLE_SIZE;
-		if (voice3Index >= WAVETABLE_SIZE) voice3Index = voice3Index - WAVETABLE_SIZE;
+		if (voice0.readIndex >= WAVETABLE_SIZE) voice0.readIndex = voice0.readIndex - WAVETABLE_SIZE;
+		if (voice1.readIndex >= WAVETABLE_SIZE) voice1.readIndex = voice1.readIndex - WAVETABLE_SIZE;
+		if (voice2.readIndex >= WAVETABLE_SIZE) voice2.readIndex = voice2.readIndex - WAVETABLE_SIZE;
+		if (voice3.readIndex >= WAVETABLE_SIZE) voice3.readIndex = voice3.readIndex - WAVETABLE_SIZE;
 		if (voiceOn == HIGH) gain = 0.25;
 		if (voiceOn == LOW)  gain = 0.25;
 		
 		
-		out = (out0 + out1 + out2 + out3) * gain;
-		
-		//out = out3 * 0.25;
+		//out = (out0 + out1 + out2 + out3) * gain;
+		//scope.log(out1);
+		out = out1 * 0.25;
 		
 		//scope.log(out);
 		for(unsigned int channel = 0; channel < context->audioOutChannels; channel++) {
 			audioWrite(context, n, channel, out);
 		}
-		/*
 		// Increment a counter on every frame
-		gCount++;
+		//gCount++;
 		
 		// Print a message every second indicating the number of seconds elapsed
-		if(gCount % (int)(context->audioSampleRate*gInterval) == 0) {
+		//if(gCount % (int)(context->audioSampleRate*gInterval) == 0) {
 			//scope.trigger();
-		    gSecondsElapsed += gInterval;
-		    rt_printf("Frequency: %f\n", voice3Pitch);
-		}
-		*/
+		    //gSecondsElapsed += gInterval;
+		    //rt_printf("Frequency: %f\n", voice3Pitch);
+		//}
 	}
 }
 

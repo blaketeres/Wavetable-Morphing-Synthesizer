@@ -7,6 +7,9 @@
 
 
 wavetable::wavetable(int basicWaveform) {
+	
+	readIndex = 0.0;
+	
 	std::fill_n(wavetable0, WAVETABLE_SIZE, 0);
 	std::fill_n(wavetable1, WAVETABLE_SIZE, 0);
 	std::fill_n(wavetable2, WAVETABLE_SIZE, 0);
@@ -30,9 +33,6 @@ wavetable::wavetable(int basicWaveform) {
 	wavetableContainer[8] = wavetable8;
 	wavetableContainer[9] = wavetable9;
 	wavetableContainer[10] = wavetable10;
-	
-	wavetableReadPointer = 0;
-	wavetableWritePointer = 0;
 	
 	if (basicWaveform == 0) generateSawtooth();
 	if (basicWaveform == 1) generateSquare();

@@ -33,8 +33,7 @@ public:
 	float wavetable10[WAVETABLE_SIZE];
 	float* wavetableContainer[NUM_WAVETABLES_PER_VOICE];
 	
-	int wavetableReadPointer;
-	int wavetableWritePointer;
+	float readIndex;
 };
 
 #endif
