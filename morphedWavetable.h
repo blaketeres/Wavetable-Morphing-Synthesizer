@@ -12,6 +12,7 @@ public:
 	morphedWavetable(wavetable a, wavetable b);
 	
 	void buildWavetables();
+	//float getValue();
 	float linearInterpolate(float a, float b, float index);
 	
 private:

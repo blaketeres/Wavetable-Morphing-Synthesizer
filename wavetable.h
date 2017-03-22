@@ -9,14 +9,17 @@
 class wavetable
 {
 public:
-	wavetable();
+	//wavetable();
+	wavetable(int basicWaveform = -1);
 	
 	virtual void buildWavetables();
 	void generateSawtooth();
 	void generateSquare();
 	void generateTriangle();
 	void generateSine();
-	
+	float* chooseWaveTable(float pitchValue);
+	float linearInterpolate(float* currentWavetable, float index);
+
 	float wavetable0[WAVETABLE_SIZE];
 	float wavetable1[WAVETABLE_SIZE];
 	float wavetable2[WAVETABLE_SIZE];

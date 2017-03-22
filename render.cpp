@@ -26,6 +26,7 @@ The Bela software is distributed under the GNU Lesser General Public License
 #include <math_neon.h>
 #include <Scope.h>
 #include "wavetable.h"
+#include "morphedWavetable.h"
 
 Scope scope;
 
@@ -35,25 +36,22 @@ float gSecondsElapsed = 0;
 int gCount = 0;
 int gAudioFramesPerAnalogFrame;
 
-// Initialize containers for wavetable voices
-float wavetableVoice0[WAVETABLE_SIZE];
-float wavetableVoice1[WAVETABLE_SIZE];
-float wavetableVoice2[WAVETABLE_SIZE];
-float wavetableVoice3[WAVETABLE_SIZE];
-float voice0Index = 0;
-float voice1Index = 0;
-float voice2Index = 0;
-float voice3Index = 0;
-
 // Initialize wavetable objects
-wavetable voice0;
-wavetable voice1;
-wavetable voice2;
-wavetable voice3;
+wavetable voice0(0);
+wavetable voice1(1);
+wavetable voice2(2);
+wavetable voice3(3);
+
 float* currentWavetableVoice0;
 float* currentWavetableVoice1;
 float* currentWavetableVoice2;
 float* currentWavetableVoice3;
+float voice0Index;
+float voice1Index;
+float voice2Index;
+float voice3Index;
+
+morphedWavetable sawToSine(voice0, voice3);
 
 
 // Initialize control variables for potentiometer inputs
@@ -169,22 +167,6 @@ float linearInterpolate(float a, float b, float index) {
 	return (a + toAdd);
 }
 
-int chooseWaveTable(float pitchValue) {
-	
-	float cutoffFreq = 44100 / (WAVETABLE_SIZE / pitchValue);
-	
-	if (cutoffFreq < 20) return 0;
-	if (cutoffFreq < 40) return 1;
-	if (cutoffFreq < 80) return 2;
-	if (cutoffFreq < 160) return 3;
-	if (cutoffFreq < 320) return 4;
-	if (cutoffFreq < 640) return 5;
-	if (cutoffFreq < 1280) return 6;
-	if (cutoffFreq < 2560) return 7;
-	if (cutoffFreq < 5120) return 8;
-	if (cutoffFreq < 10240) return 9;
-	return 10;
-}
 
 bool setup(BelaContext *context, void *userData)
 {
@@ -200,15 +182,14 @@ bool setup(BelaContext *context, void *userData)
 		printf("Error: for this project, you need the same number of input and output channels.\n");
 		return false;
 	}
-	
 	scope.setup(1, context->audioSampleRate);
-	
-	voice0.generateSawtooth();
-	voice1.generateSquare();
-	voice2.generateTriangle();
-	voice3.generateSine();
-	
 	gAudioFramesPerAnalogFrame = context->audioFrames / context->analogFrames;
+	
+	
+	voice0Index = 0;
+	voice1Index = 0;
+	voice2Index = 0;
+	voice3Index = 0;
 	
 	pinMode(context, 0, P8_07, INPUT);
 	pinMode(context, 0, P8_08, INPUT);
@@ -264,31 +245,36 @@ void render(BelaContext *context, void *userData)
 			indexSelector = (int)map(analogRead(context, n/gAudioFramesPerAnalogFrame, indexSelectorChannel), 0, 1, 2, WAVETABLE_SIZE);
 			removePotFlutter(indexSelector, lastIndexSelector, 10, WAVETABLE_SIZE - 1);
 			
+			
 			voice0Pitch = analogRead(context, n/gAudioFramesPerAnalogFrame, voice0PitchChannel);
 			//removePotFlutterFloat(voice0Pitch, voice0PitchLast, 0.001);
 			voice0Pitch = powf_neon(voice0Pitch + 1, 11.0);
-			currentWavetableVoice0 = voice0.wavetableContainer[chooseWaveTable(voice0Pitch)];
+			currentWavetableVoice0 = voice0.chooseWaveTable(voice0Pitch);
 			
 			voice1Pitch = analogRead(context, n/gAudioFramesPerAnalogFrame, voice1PitchChannel);
 			//removePotFlutterFloat(voice1Pitch, voice1PitchLast, 0.001);
 			voice1Pitch = powf_neon(voice1Pitch + 1.0, 11.0);
-			currentWavetableVoice1 = voice1.wavetableContainer[chooseWaveTable(voice1Pitch)];
+			currentWavetableVoice1 = voice1.chooseWaveTable(voice1Pitch);
 			
 			voice2Pitch = analogRead(context, n/gAudioFramesPerAnalogFrame, voice2PitchChannel);
 			//removePotFlutterFloat(voice2Pitch, voice2PitchLast, 0.001);
 			voice2Pitch = powf_neon(voice2Pitch + 1.0, 11.0);
-			currentWavetableVoice2 = voice2.wavetableContainer[chooseWaveTable(voice2Pitch)];
+			currentWavetableVoice2 = voice2.chooseWaveTable(voice2Pitch);
 			
 			voice3Pitch = analogRead(context, n/gAudioFramesPerAnalogFrame, voice3PitchChannel);
 			//removePotFlutterFloat(voice3Pitch, voice3PitchLast, 0.001);
 			voice3Pitch = powf_neon(voice3Pitch + 1.0, 11.0);
-			currentWavetableVoice3 = voice3.wavetableContainer[chooseWaveTable(voice3Pitch)];
+			currentWavetableVoice3 = voice3.chooseWaveTable(voice3Pitch);
 		}
 		
-		out0 = linearInterpolate(currentWavetableVoice0[(int)voice0Index], currentWavetableVoice0[(int)(voice0Index + 1) % WAVETABLE_SIZE], voice0Index);
-		out1 = linearInterpolate(currentWavetableVoice1[(int)voice1Index], currentWavetableVoice1[(int)(voice1Index + 1) % WAVETABLE_SIZE], voice1Index);
-		out2 = linearInterpolate(currentWavetableVoice2[(int)voice2Index], currentWavetableVoice2[(int)(voice2Index + 1) % WAVETABLE_SIZE], voice2Index);
-		out3 = linearInterpolate(currentWavetableVoice3[(int)voice3Index], currentWavetableVoice3[(int)(voice3Index + 1) % WAVETABLE_SIZE], voice3Index);
+		out0 = voice0.linearInterpolate(currentWavetableVoice0, voice0Index);
+		out1 = voice1.linearInterpolate(currentWavetableVoice1, voice1Index);
+		out2 = voice2.linearInterpolate(currentWavetableVoice2, voice2Index);
+		out3 = voice3.linearInterpolate(currentWavetableVoice3, voice3Index);
+		//out0 = linearInterpolate(currentWavetableVoice0[(int)voice0Index], currentWavetableVoice0[(int)(voice0Index + 1) % WAVETABLE_SIZE], voice0Index);
+		//out1 = linearInterpolate(currentWavetableVoice1[(int)voice1Index], currentWavetableVoice1[(int)(voice1Index + 1) % WAVETABLE_SIZE], voice1Index);
+		//out2 = linearInterpolate(currentWavetableVoice2[(int)voice2Index], currentWavetableVoice2[(int)(voice2Index + 1) % WAVETABLE_SIZE], voice2Index);
+		//out3 = linearInterpolate(currentWavetableVoice3[(int)voice3Index], currentWavetableVoice3[(int)(voice3Index + 1) % WAVETABLE_SIZE], voice3Index);
 		voice0Index += voice0Pitch;
 		voice1Index += voice1Pitch;
 		voice2Index += voice2Pitch;
@@ -299,18 +285,18 @@ void render(BelaContext *context, void *userData)
 		if (voice2Index >= WAVETABLE_SIZE) voice2Index = voice2Index - WAVETABLE_SIZE;
 		if (voice3Index >= WAVETABLE_SIZE) voice3Index = voice3Index - WAVETABLE_SIZE;
 		if (voiceOn == HIGH) gain = 0.25;
-		if (voiceOn == LOW)  gain = 0.0;
+		if (voiceOn == LOW)  gain = 0.25;
 		
 		
-		//out = (out0 + out1 + out2 + out3) * gain;
+		out = (out0 + out1 + out2 + out3) * gain;
 		
-		out = out3 * 0.25;
+		//out = out3 * 0.25;
 		
 		//scope.log(out);
 		for(unsigned int channel = 0; channel < context->audioOutChannels; channel++) {
 			audioWrite(context, n, channel, out);
 		}
-		
+		/*
 		// Increment a counter on every frame
 		gCount++;
 		
@@ -319,8 +305,8 @@ void render(BelaContext *context, void *userData)
 			//scope.trigger();
 		    gSecondsElapsed += gInterval;
 		    rt_printf("Frequency: %f\n", voice3Pitch);
-		    rt_printf("Wavetable: %d", chooseWaveTable(voice3Pitch));
 		}
+		*/
 	}
 }
 

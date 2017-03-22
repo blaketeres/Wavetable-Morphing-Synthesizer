@@ -6,7 +6,7 @@
 #include <math_neon.h>
 
 
-wavetable::wavetable() {
+wavetable::wavetable(int basicWaveform) {
 	std::fill_n(wavetable0, WAVETABLE_SIZE, 0);
 	std::fill_n(wavetable1, WAVETABLE_SIZE, 0);
 	std::fill_n(wavetable2, WAVETABLE_SIZE, 0);
@@ -18,7 +18,7 @@ wavetable::wavetable() {
 	std::fill_n(wavetable8, WAVETABLE_SIZE, 0);
 	std::fill_n(wavetable9, WAVETABLE_SIZE, 0);
 	std::fill_n(wavetable10, WAVETABLE_SIZE, 0);
-	
+
 	wavetableContainer[0] = wavetable0;
 	wavetableContainer[1] = wavetable1;
 	wavetableContainer[2] = wavetable2;
@@ -33,6 +33,12 @@ wavetable::wavetable() {
 	
 	wavetableReadPointer = 0;
 	wavetableWritePointer = 0;
+	
+	if (basicWaveform == 0) generateSawtooth();
+	if (basicWaveform == 1) generateSquare();
+	if (basicWaveform == 2) generateTriangle();
+	if (basicWaveform == 3) generateSine();
+
 }
 
 
@@ -40,6 +46,32 @@ void wavetable::buildWavetables() {
 	for (int i = 1; i < NUM_WAVETABLES_PER_VOICE; i++) {
 		wavetableContainer[i] = wavetable0;
 	}
+}
+
+float* wavetable::chooseWaveTable(float pitchValue) {
+	
+	float cutoffFreq = 44100 / (WAVETABLE_SIZE / pitchValue);
+	
+	if (cutoffFreq < 20) return wavetableContainer[0];
+	if (cutoffFreq < 40) return wavetableContainer[1];
+	if (cutoffFreq < 80) return wavetableContainer[2];
+	if (cutoffFreq < 160) return wavetableContainer[3];
+	if (cutoffFreq < 320) return wavetableContainer[4];
+	if (cutoffFreq < 640) return wavetableContainer[5];
+	if (cutoffFreq < 1280) return wavetableContainer[6];
+	if (cutoffFreq < 2560) return wavetableContainer[7];
+	if (cutoffFreq < 5120) return wavetableContainer[8];
+	if (cutoffFreq < 10240) return wavetableContainer[9];
+	return wavetableContainer[10];
+}
+
+float wavetable::linearInterpolate(float* currentWavetable, float index) {
+	float a = currentWavetable[(int)index];
+	float b = currentWavetable[(int)(index + 1) % WAVETABLE_SIZE];
+	float fraction = index - (int)index;
+	float difference = b - a;
+	float toAdd = fraction * difference;
+	return (a + toAdd);
 }
 
 
