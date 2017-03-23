@@ -7,12 +7,11 @@
 
 #define NUM_MORPH_TABLES 64
 
-class morphedWavetable : public wavetable {
+class morphedWavetable : wavetable {
 public:
 	morphedWavetable(wavetable a, wavetable b);
 	
-	void buildWavetables();
-	//float getValue();
+	void buildWavetables(wavetable a, wavetable b);
 	float linearInterpolate(float a, float b, float index);
 	
 private:

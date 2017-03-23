@@ -34,11 +34,23 @@ wavetable::wavetable(int basicWaveform) {
 	wavetableContainer[9] = wavetable9;
 	wavetableContainer[10] = wavetable10;
 	
-	if (basicWaveform == 0) generateSawtooth();
-	if (basicWaveform == 1) generateSquare();
-	if (basicWaveform == 2) generateTriangle();
-	if (basicWaveform == 3) generateSine();
+	switch(basicWaveform) {
+		case 0: generateSawtooth(); break;
+		case 1: generateSquare(); break;
+		case 2: generateTriangle(); break;
+		case 3: generateSine(); break;
+	}
+}
 
+float wavetable::getTableOutAndInc() {
+	
+	float out = linearInterpolate();
+	readIndex += pitch;
+	
+	if (readIndex >= WAVETABLE_SIZE)
+		readIndex = readIndex - WAVETABLE_SIZE;
+		
+	return out;
 }
 
 
@@ -48,30 +60,35 @@ void wavetable::buildWavetables() {
 	}
 }
 
-float* wavetable::chooseWaveTable(float pitchValue) {
+void wavetable::chooseWaveTable(float pitchValue) {
 	
 	float cutoffFreq = 44100 / (WAVETABLE_SIZE / pitchValue);
 	
-	if (cutoffFreq < 20) return wavetableContainer[0];
-	if (cutoffFreq < 40) return wavetableContainer[1];
-	if (cutoffFreq < 80) return wavetableContainer[2];
-	if (cutoffFreq < 160) return wavetableContainer[3];
-	if (cutoffFreq < 320) return wavetableContainer[4];
-	if (cutoffFreq < 640) return wavetableContainer[5];
-	if (cutoffFreq < 1280) return wavetableContainer[6];
-	if (cutoffFreq < 2560) return wavetableContainer[7];
-	if (cutoffFreq < 5120) return wavetableContainer[8];
-	if (cutoffFreq < 10240) return wavetableContainer[9];
-	return wavetableContainer[10];
+	if (cutoffFreq < 20) {currentWavetable = wavetableContainer[0]; return;}
+	if (cutoffFreq < 40) {currentWavetable = wavetableContainer[1]; return;}
+	if (cutoffFreq < 80) {currentWavetable = wavetableContainer[2]; return;}
+	if (cutoffFreq < 160) {currentWavetable = wavetableContainer[3]; return;}
+	if (cutoffFreq < 320) {currentWavetable = wavetableContainer[4]; return;}
+	if (cutoffFreq < 640) {currentWavetable = wavetableContainer[5]; return;}
+	if (cutoffFreq < 1280) {currentWavetable = wavetableContainer[6]; return;}
+	if (cutoffFreq < 2560) {currentWavetable = wavetableContainer[7]; return;}
+	if (cutoffFreq < 5120) {currentWavetable = wavetableContainer[8]; return;}
+	if (cutoffFreq < 10240) {currentWavetable = wavetableContainer[9]; return;}
+	currentWavetable = wavetableContainer[10];
 }
 
-float wavetable::linearInterpolate(float* currentWavetable, float index) {
-	float a = currentWavetable[(int)index];
-	float b = currentWavetable[(int)(index + 1) % WAVETABLE_SIZE];
-	float fraction = index - (int)index;
+float wavetable::linearInterpolate() {
+	float a = currentWavetable[(int)readIndex];
+	float b = currentWavetable[(int)(readIndex + 1) % WAVETABLE_SIZE];
+	float fraction = readIndex - (int)readIndex;
 	float difference = b - a;
 	float toAdd = fraction * difference;
 	return (a + toAdd);
+}
+
+void wavetable::getPitch(float potInput) {
+	pitch = powf_neon(potInput + 1, 11.0);
+	chooseWaveTable(pitch);
 }
 
 

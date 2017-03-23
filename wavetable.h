@@ -9,17 +9,24 @@
 class wavetable
 {
 public:
-	//wavetable();
 	wavetable(int basicWaveform = -1);
 	
-	virtual void buildWavetables();
+	void buildWavetables();
+	
 	void generateSawtooth();
 	void generateSquare();
 	void generateTriangle();
 	void generateSine();
-	float* chooseWaveTable(float pitchValue);
-	float linearInterpolate(float* currentWavetable, float index);
-
+	
+	void getPitch(float potInput);
+	void chooseWaveTable(float pitchValue);
+	
+	float getTableOutAndInc();
+	float linearInterpolate();
+	
+	float* wavetableContainer[NUM_WAVETABLES_PER_VOICE];
+	
+private:
 	float wavetable0[WAVETABLE_SIZE];
 	float wavetable1[WAVETABLE_SIZE];
 	float wavetable2[WAVETABLE_SIZE];
@@ -31,9 +38,10 @@ public:
 	float wavetable8[WAVETABLE_SIZE];
 	float wavetable9[WAVETABLE_SIZE];
 	float wavetable10[WAVETABLE_SIZE];
-	float* wavetableContainer[NUM_WAVETABLES_PER_VOICE];
 	
 	float readIndex;
+	float pitch;
+	float* currentWavetable;
 };
 
 #endif
