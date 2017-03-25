@@ -40,10 +40,8 @@ wavetable::wavetable(int basicWaveform) {
 	switch(basicWaveform) {
 		case 0: fillSawtooth(); break;
 		case 1: fillSquare(); break;
-		/*
-		case 2: generateTriangle(); break;
+		case 2: fillTriangle(); break;
 		case 3: generateSine(); break;
-		*/
 	}
 	
 }
@@ -97,38 +95,38 @@ void wavetable::getPitch(float potInput) {
 	chooseWaveTable(pitch);
 }
 
-
-void wavetable::generateSawtooth(float* wavetable, int numHarmonics) {
-	float amplitude;
-	for (int i = 0; i < numHarmonics; i++) {
-		amplitude = 1.0 / i;
-		generateHarmonic(wavetable, i, amplitude);
-	}
-}
-
 void wavetable::fillSawtooth() {
 	for (int i = 0; i < NUM_WAVETABLES_PER_VOICE; i++) {
-		generateSawtooth(wavetableContainer[i], numHarmonicsPerTable[i]);
-	}
-}
-
-void wavetable::generateSquare(float* wavetable, int numHarmonics) {
-	float amplitude;
-	for (int i = 0; i < numHarmonics; i++) {
-		if (i % 2) {
-			amplitude = 1.0 / i;
-			generateHarmonic(wavetable, i, amplitude);
+		float amplitude;
+		for (int j = 1; j < numHarmonicsPerTable[i]; j++) {
+			amplitude = 1.0 / j;
+			generateHarmonic(wavetableContainer[i], j, amplitude);
 		}
 	}
 }
 
+
 void wavetable::fillSquare() {
 	for (int i = 0; i < NUM_WAVETABLES_PER_VOICE; i++) {
-		generateSquare(wavetableContainer[i], numHarmonicsPerTable[i]);
+		float amplitude;
+		for (int j = 1; j < numHarmonicsPerTable[i]; j += 2) {
+			amplitude = 1.0 / j;
+			generateHarmonic(wavetableContainer[i], j, amplitude);
+		}
 	}
 }
 
-void wavetable::generateSine(float* wavetable) {
+void wavetable::fillTriangle() {
+	for (int i = 0; i < NUM_WAVETABLES_PER_VOICE; i++) {
+		float amplitude;
+		for (int j = 1; j < numHarmonicsPerTable[i]; j += 2) {
+			amplitude = 1.0 / (j * j);
+			generateHarmonic(wavetableContainer[i], j, amplitude);
+		}
+	}
+}
+
+void wavetable::generateSine() {
 	float twoPi = 6.28318530718;
 	float sineInterval = twoPi / (float)WAVETABLE_SIZE;
 	float sineValue = 0.0;
@@ -136,22 +134,7 @@ void wavetable::generateSine(float* wavetable) {
 		wavetable0[i] = sinf_neon(sineValue);
 		sineValue += sineInterval;
 	}
-}
-
-void wavetable::generateTriangle(float* wavetable, int numHarmonics) {
-	float triangleInterval = 2.0 / (WAVETABLE_SIZE / 2);
-	float triangleValue = -1.0;
-	int half = WAVETABLE_SIZE / 2;
-	for (int i = 0; i < WAVETABLE_SIZE; i++) {
-		if (i < half) {
-			wavetable0[i] = triangleValue;
-			triangleValue += triangleInterval;
-		}
-		else {
-			wavetable0[i] = triangleValue;
-			triangleValue -= triangleInterval;
-		}
-	}
+	buildWavetables();
 }
 
 void wavetable::generateHarmonic(float* wavetable, int harmonicMultiple, float amplitude) {

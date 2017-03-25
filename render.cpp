@@ -42,7 +42,7 @@ wavetable voice1(1);
 wavetable voice2(2);
 wavetable voice3(3);
 
-//morphedWavetable sawToSine(voice0, voice3);
+morphedWavetable sawToSine(voice0, voice3);
 
 
 // Initialize control variables for potentiometer inputs
@@ -229,23 +229,23 @@ void render(BelaContext *context, void *userData)
 		if (voiceOn == HIGH) gain = 0.25;
 		if (voiceOn == LOW)  gain = 0.25;
 		
-		scope.log(out1);
-		//out = (out0 + out1 + out2 + out3) * gain;
-		out = out1 * 0.25;
+		//scope.log(out2);
+		out = (out0 + out1 + out2 + out3) * gain;
+		//out = out1 * 0.25;
 		
 		for(unsigned int channel = 0; channel < context->audioOutChannels; channel++) {
 			audioWrite(context, n, channel, out);
 		}
 		
 		// Increment a counter on every frame
-		gCount++;
+		//gCount++;
 		
 		// Print a message every second indicating the number of seconds elapsed
-		if(gCount % (int)(context->audioSampleRate*gInterval) == 0) {
-			scope.trigger();
+		//if(gCount % (int)(context->audioSampleRate*gInterval) == 0) {
+			//scope.trigger();
 		    //gSecondsElapsed += gInterval;
 		    //rt_printf("Frequency: %f\n", voice3Pitch);
-		}
+		//}
 	}
 }
 

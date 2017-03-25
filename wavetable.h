@@ -12,14 +12,11 @@ public:
 	wavetable(int basicWaveform = -1);
 	
 	void buildWavetables();
-	
-	void generateSawtooth(float* wavetable, int numHarmonics);
-	void generateSquare(float* wavetable, int numHarmonics);
-	void generateTriangle(float* wavetable, int numHarmonics);
-	void generateSine(float* wavetable);
+	void generateSine();
 	
 	void fillSawtooth();
 	void fillSquare();
+	void fillTriangle();
 	
 	void generateHarmonic(float* wavetable, int harmonicMultiple, float amplitude);
 	
