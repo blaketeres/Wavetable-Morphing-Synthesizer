@@ -13,10 +13,15 @@ public:
 	
 	void buildWavetables();
 	
-	void generateSawtooth();
-	void generateSquare();
-	void generateTriangle();
-	void generateSine();
+	void generateSawtooth(float* wavetable, int numHarmonics);
+	void generateSquare(float* wavetable, int numHarmonics);
+	void generateTriangle(float* wavetable, int numHarmonics);
+	void generateSine(float* wavetable);
+	
+	void fillSawtooth();
+	void fillSquare();
+	
+	void generateHarmonic(float* wavetable, int harmonicMultiple, float amplitude);
 	
 	void getPitch(float potInput);
 	void chooseWaveTable(float pitchValue);
@@ -42,6 +47,7 @@ private:
 	float readIndex;
 	float pitch;
 	float* currentWavetable;
+
 };
 
 #endif

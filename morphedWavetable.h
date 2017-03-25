@@ -7,7 +7,7 @@
 
 #define NUM_MORPH_TABLES 64
 
-class morphedWavetable : wavetable {
+class morphedWavetable : public wavetable {
 public:
 	morphedWavetable(wavetable a, wavetable b);
 	
