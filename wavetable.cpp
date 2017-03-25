@@ -37,7 +37,6 @@ wavetable::wavetable(int basicWaveform) {
 	wavetableContainer[9] = wavetable9;
 	wavetableContainer[10] = wavetable10;
 	
-	
 	switch(basicWaveform) {
 		case 0: fillSawtooth(); break;
 		case 1: fillSquare(); break;
@@ -100,10 +99,10 @@ void wavetable::getPitch(float potInput) {
 
 
 void wavetable::generateSawtooth(float* wavetable, int numHarmonics) {
-	float amplitude = 0.5;
+	float amplitude;
 	for (int i = 0; i < numHarmonics; i++) {
+		amplitude = 1.0 / i;
 		generateHarmonic(wavetable, i, amplitude);
-		amplitude *= 0.66666;
 	}
 }
 
@@ -114,11 +113,11 @@ void wavetable::fillSawtooth() {
 }
 
 void wavetable::generateSquare(float* wavetable, int numHarmonics) {
-	float amplitude = 0.5;
+	float amplitude;
 	for (int i = 0; i < numHarmonics; i++) {
 		if (i % 2) {
+			amplitude = 1.0 / i;
 			generateHarmonic(wavetable, i, amplitude);
-			amplitude *= 0.66666;
 		}
 	}
 }

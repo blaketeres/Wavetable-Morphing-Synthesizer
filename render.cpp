@@ -42,7 +42,7 @@ wavetable voice1(1);
 wavetable voice2(2);
 wavetable voice3(3);
 
-morphedWavetable sawToSine(voice0, voice3);
+//morphedWavetable sawToSine(voice0, voice3);
 
 
 // Initialize control variables for potentiometer inputs
@@ -230,8 +230,8 @@ void render(BelaContext *context, void *userData)
 		if (voiceOn == LOW)  gain = 0.25;
 		
 		scope.log(out1);
-		out = (out0 + out1) * gain;//) + out2 + out3) * gain;
-		//out = out1 * 0.25;
+		//out = (out0 + out1 + out2 + out3) * gain;
+		out = out1 * 0.25;
 		
 		for(unsigned int channel = 0; channel < context->audioOutChannels; channel++) {
 			audioWrite(context, n, channel, out);
