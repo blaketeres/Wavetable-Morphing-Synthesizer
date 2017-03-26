@@ -113,10 +113,10 @@ int yBezier;
 int boundaryLeft;
 int boundaryRight;
 
-float waveshapeCuber(float in, float waveShaperIn) {
+void waveshapeCuber(float &in, float waveShaperIn) {
 	waveShaperIn = (waveShaperIn + 1.0) * 3.0;
-	float output = powf(in, waveShaperIn);
-	return output;
+	if (waveShaperIn < 1.1) waveShaperIn = 1;
+	in = powf_neon(in, waveShaperIn);
 }
 
 void removePotFlutter(int &potValue, int &lastPotValue, int range, int max) {
@@ -227,8 +227,8 @@ void render(BelaContext *context, void *userData)
 		}
 		
 		//out0 = voice0.getTableOutAndInc();
-		//out0 = sawToSquare.outputMorph(morphSpeed0);
-		out0 = waveshapeCuber(sawToSquare.outputMorph(morphSpeed0), waveShaper0);
+		out0 = sawToSquare.outputMorph(morphSpeed0);
+		//waveshapeCuber(out0, waveShaper0);
 		
 		// Button on/off handling
 		if (voiceOn == HIGH) gain = 0.25;

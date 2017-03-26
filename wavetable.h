@@ -29,8 +29,6 @@ public:
 	
 	float* wavetableContainer[NUM_WAVETABLES_PER_VOICE];
 	
-	float pitch;
-	
 private:
 	float wavetable0[WAVETABLE_SIZE];
 	float wavetable1[WAVETABLE_SIZE];
@@ -46,6 +44,8 @@ private:
 	
 	float readIndex;
 	float* currentWavetable;
+	
+	float pitch;
 
 };
 
