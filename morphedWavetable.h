@@ -5,17 +5,20 @@
 
 #include "wavetable.h"
 
-#define NUM_MORPH_TABLES 64
-
-class morphedWavetable : wavetable {
+class morphedWavetable : public wavetable {
 public:
-	morphedWavetable(wavetable a, wavetable b);
+	morphedWavetable(wavetable* a, wavetable* b, int sampleRate);
 	
-	void buildWavetables(wavetable a, wavetable b);
-	float linearInterpolate(float a, float b, float index);
-	
+	float outputMorph(float timeInSeconds);
 private:
-	wavetable morphedWavetableContainer[NUM_MORPH_TABLES];
+	wavetable* tableA;
+	wavetable* tableB;
+	
+	float multiplier;
+	
+	float multiplierInterval;
+	
+	bool inc;
 };
 
 #endif
