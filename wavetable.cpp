@@ -1,11 +1,6 @@
 /***** wavetable.cpp *****/
 
 #include "wavetable.h"
-#include <array>
-#include <Bela.h>
-#include <math_neon.h>
-
-BelaContext* context;
 
 int numHarmonicsPerTable[11] = {1024, 512, 256, 128, 64, 32, 16, 8, 4, 2, 1};
 
@@ -41,7 +36,7 @@ wavetable::wavetable(int basicWaveform) {
 		case 0: fillSawtooth(); break;
 		case 1: fillSquare(); break;
 		case 2: fillTriangle(); break;
-		case 3: generateSine(); break;
+		case 3: fillSine(); break;
 	}
 	
 }
@@ -55,13 +50,6 @@ float wavetable::getTableOutAndInc() {
 		readIndex = readIndex - WAVETABLE_SIZE;
 		
 	return out;
-}
-
-
-void wavetable::buildWavetables() {
-	for (int i = 1; i < NUM_WAVETABLES_PER_VOICE; i++) {
-		wavetableContainer[i] = wavetable0;
-	}
 }
 
 void wavetable::chooseWaveTable(float pitchValue) {
@@ -126,7 +114,7 @@ void wavetable::fillTriangle() {
 	}
 }
 
-void wavetable::generateSine() {
+void wavetable::fillSine() {
 	float twoPi = 6.28318530718;
 	float sineInterval = twoPi / (float)WAVETABLE_SIZE;
 	float sineValue = 0.0;
@@ -134,7 +122,9 @@ void wavetable::generateSine() {
 		wavetable0[i] = sinf_neon(sineValue);
 		sineValue += sineInterval;
 	}
-	buildWavetables();
+	for (int i = 1; i < NUM_WAVETABLES_PER_VOICE; i++) {
+		wavetableContainer[i] = wavetable0;
+	}
 }
 
 void wavetable::generateHarmonic(float* wavetable, int harmonicMultiple, float amplitude) {

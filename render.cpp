@@ -39,36 +39,40 @@ int gAudioFramesPerAnalogFrame;
 // Initialize wavetable objects
 wavetable voice0(0);
 wavetable voice1(1);
-wavetable voice2(2);
-wavetable voice3(3);
+wavetable voice2(0);
+wavetable voice3(1);
+wavetable* voice0Ptr = &voice0;
+wavetable* voice1Ptr = &voice1;
+wavetable* voice2Ptr = &voice2;
+wavetable* voice3Ptr = &voice3;
 
-morphedWavetable sawToSine(voice0, voice3);
-
+morphedWavetable sawToSquare(voice0Ptr, voice1Ptr, 44100);
+morphedWavetable triToSine(voice2Ptr, voice3Ptr, 44100);
 
 // Initialize control variables for potentiometer inputs
-int xCoordinate;
-int lastXCoordinate;
-int xCoordinateChannel = 0;
+float morphSpeed0;
+int morphSpeed0Channel = 0;
 
-int yCoordinate;
-int lastYCoordinate;
-int yCoordinateChannel = 1;
+float morphSpeed1;
+int morphSpeed1Channel = 1;
 
-int indexSelector;
-int lastIndexSelector;
-int indexSelectorChannel = 2;
+float waveShaper0;
+int waveShaper0Channel = 2;
+
+float waveShaper1;
+int waveShaper1Channel = 3;
 
 float voice0Pitch;
-int voice0PitchChannel = 3;
+int voice0PitchChannel = 4;
 
 float voice1Pitch;
-int voice1PitchChannel = 4;
+int voice1PitchChannel = 5;
 
 float voice2Pitch;
-int voice2PitchChannel = 5;
+int voice2PitchChannel = 6;
 
 float voice3Pitch;
-int voice3PitchChannel = 6;
+int voice3PitchChannel = 7;
 
 
 // Initialize control variables for button inputs
@@ -109,6 +113,11 @@ int yBezier;
 int boundaryLeft;
 int boundaryRight;
 
+float waveshapeCuber(float in, float waveShaperIn) {
+	waveShaperIn = (waveShaperIn + 1.0) * 3.0;
+	float output = powf(in, waveShaperIn);
+	return output;
+}
 
 void removePotFlutter(int &potValue, int &lastPotValue, int range, int max) {
 	if (potValue == 0 || potValue == max) {
@@ -198,14 +207,11 @@ void render(BelaContext *context, void *userData)
 		handleEncoder(context, encoder3Status, encoder3PinA, encoder3PinALast, encoder3PinB, encoder3Pos, n);
 		
 		if(!(n % gAudioFramesPerAnalogFrame)) {
-			xCoordinate = (int)map(analogRead(context, n/gAudioFramesPerAnalogFrame, xCoordinateChannel), 0, 1, 0, WAVETABLE_SIZE);
-			removePotFlutter(xCoordinate, lastXCoordinate, 10, WAVETABLE_SIZE - 1);
+			morphSpeed0 = powf((analogRead(context, n/gAudioFramesPerAnalogFrame, morphSpeed0Channel) + 0.1), 2.0) * 1.25;
+			morphSpeed1 = powf((analogRead(context, n/gAudioFramesPerAnalogFrame, morphSpeed1Channel) + 0.1), 2.0) * 1.25;
 			
-			yCoordinate = (int)map(analogRead(context, n/gAudioFramesPerAnalogFrame, yCoordinateChannel), 0, 1, 0, 1024);
-			removePotFlutter(yCoordinate, lastYCoordinate, 10, 1023);
-			
-			indexSelector = (int)map(analogRead(context, n/gAudioFramesPerAnalogFrame, indexSelectorChannel), 0, 1, 2, WAVETABLE_SIZE);
-			removePotFlutter(indexSelector, lastIndexSelector, 10, WAVETABLE_SIZE - 1);
+			waveShaper0 = analogRead(context, n/gAudioFramesPerAnalogFrame, waveShaper0Channel);
+			waveShaper1 = analogRead(context, n/gAudioFramesPerAnalogFrame, waveShaper1Channel);
 			
 			voice0Pitch = analogRead(context, n/gAudioFramesPerAnalogFrame, voice0PitchChannel);
 			voice0.getPitch(voice0Pitch);
@@ -220,32 +226,32 @@ void render(BelaContext *context, void *userData)
 			voice3.getPitch(voice3Pitch);
 		}
 		
-		out0 = voice0.getTableOutAndInc();
-		out1 = voice1.getTableOutAndInc();
-		out2 = voice2.getTableOutAndInc();
-		out3 = voice3.getTableOutAndInc();
+		//out0 = voice0.getTableOutAndInc();
+		//out0 = sawToSquare.outputMorph(morphSpeed0);
+		out0 = waveshapeCuber(sawToSquare.outputMorph(morphSpeed0), waveShaper0);
 		
 		// Button on/off handling
 		if (voiceOn == HIGH) gain = 0.25;
 		if (voiceOn == LOW)  gain = 0.25;
 		
 		//scope.log(out2);
-		out = (out0 + out1 + out2 + out3) * gain;
-		//out = out1 * 0.25;
+		//out = (out0 + out1 + out2) * gain;
+		out = out0 * 0.25;
 		
 		for(unsigned int channel = 0; channel < context->audioOutChannels; channel++) {
 			audioWrite(context, n, channel, out);
 		}
-		
+		/*
 		// Increment a counter on every frame
-		//gCount++;
+		gCount++;
 		
 		// Print a message every second indicating the number of seconds elapsed
-		//if(gCount % (int)(context->audioSampleRate*gInterval) == 0) {
+		if(gCount % (int)(context->audioSampleRate*gInterval) == 0) {
 			//scope.trigger();
-		    //gSecondsElapsed += gInterval;
-		    //rt_printf("Frequency: %f\n", voice3Pitch);
-		//}
+		    gSecondsElapsed += gInterval;
+		    rt_printf("Frequency: %d\n", morphSpeed);
+		}
+		*/
 	}
 }
 

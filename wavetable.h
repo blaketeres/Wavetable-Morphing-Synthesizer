@@ -6,17 +6,18 @@
 #define WAVETABLE_SIZE 4096
 #define NUM_WAVETABLES_PER_VOICE 11
 
+#include <array>
+#include <math_neon.h>
+
 class wavetable
 {
 public:
 	wavetable(int basicWaveform = -1);
 	
-	void buildWavetables();
-	void generateSine();
-	
 	void fillSawtooth();
 	void fillSquare();
 	void fillTriangle();
+	void fillSine();
 	
 	void generateHarmonic(float* wavetable, int harmonicMultiple, float amplitude);
 	
@@ -27,6 +28,8 @@ public:
 	float linearInterpolate();
 	
 	float* wavetableContainer[NUM_WAVETABLES_PER_VOICE];
+	
+	float pitch;
 	
 private:
 	float wavetable0[WAVETABLE_SIZE];
@@ -42,7 +45,6 @@ private:
 	float wavetable10[WAVETABLE_SIZE];
 	
 	float readIndex;
-	float pitch;
 	float* currentWavetable;
 
 };
