@@ -4,10 +4,13 @@
 #define WAVETABLE_H
 
 #define WAVETABLE_SIZE 4096
-#define NUM_WAVETABLES_PER_VOICE 11
+#define NUM_WAVETABLES_PER_VOICE 17
+#define TWO_PI 6.28318530718
 
 #include <array>
+#include <cmath>
 #include <math_neon.h>
+#include <vector>
 
 class wavetable
 {
@@ -18,16 +21,19 @@ public:
 	void fillSquare();
 	void fillTriangle();
 	void fillSine();
+	void fillOtherWaveform(std::vector<float>& listOfHarmonics, std::vector<float>& listOfAmplitudes);
 	
-	void generateHarmonic(float* wavetable, int harmonicMultiple, float amplitude);
+	void generateHarmonic(float* wavetable, float harmonicMultiple, float amplitude);
 	
 	void getPitch(float potInput);
-	void chooseWaveTable(float pitchValue);
+	void chooseWavetable(float pitchValue);
 	
 	float getTableOutAndInc();
 	float linearInterpolate();
 	
 	float* wavetableContainer[NUM_WAVETABLES_PER_VOICE];
+	
+	float getData();
 	
 private:
 	float wavetable0[WAVETABLE_SIZE];
@@ -41,12 +47,18 @@ private:
 	float wavetable8[WAVETABLE_SIZE];
 	float wavetable9[WAVETABLE_SIZE];
 	float wavetable10[WAVETABLE_SIZE];
+	float wavetable11[WAVETABLE_SIZE];
+	float wavetable12[WAVETABLE_SIZE];
+	float wavetable13[WAVETABLE_SIZE];
+	float wavetable14[WAVETABLE_SIZE];
+	float wavetable15[WAVETABLE_SIZE];
+	float wavetable16[WAVETABLE_SIZE];
 	
 	float readIndex;
 	float* currentWavetable;
 	
 	float pitch;
-
+	float cutoffFreq;
 };
 
 #endif

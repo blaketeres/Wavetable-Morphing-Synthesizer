@@ -22,9 +22,10 @@ The Bela software is distributed under the GNU Lesser General Public License
 */
 
 #include <Bela.h>
-#include <cmath>
-#include <math_neon.h>
+//#include <cmath>
+//#include <math_neon.h>
 #include <Scope.h>
+#include <vector>
 #include "wavetable.h"
 #include "morphedWavetable.h"
 
@@ -36,18 +37,40 @@ float gSecondsElapsed = 0;
 int gCount = 0;
 int gAudioFramesPerAnalogFrame;
 
+float cwh0[10] = {1.0, 4.0, 6.0, 10.0, 13.0, 19.0, 22.0, 23.0, 27.0, 3.0};
+float cwa0[10] = {1.0, 0.8, 0.9, 0.3, 0.5, 0.2, 0.1, 0.1, 0.6, 0.7};
+std::vector<float> customWavetableHarmonics0 (cwh0, cwh0 + sizeof(cwh0) / sizeof(float));
+std::vector<float> customWavetableAmplitude0 (cwa0, cwa0 + sizeof(cwa0) / sizeof(float));
+
+float cwh1[10] = {1.0, 23.0, 12.0, 27.0, 10.0, 4.0, 22.0, 3.0, 5.0, 34.0};
+float cwa1[10] = {1.0, 0.8, 0.9, 0.3, 0.5, 0.2, 0.1, 0.1, 0.6, 0.7};
+std::vector<float> customWavetableHarmonics1 (cwh1, cwh1 + sizeof(cwh1) / sizeof(float));
+std::vector<float> customWavetableAmplitude1 (cwa1, cwa1 + sizeof(cwa1) / sizeof(float));
+
+float cwh2[10] = {1.0, 2.0, 12.0, 17.0, 11.0, 40.0, 22.0, 36.0, 25.0, 3.0};
+float cwa2[10] = {1.0, 0.8, 0.9, 0.3, 0.5, 0.2, 0.1, 0.1, 0.6, 0.7};
+std::vector<float> customWavetableHarmonics2 (cwh2, cwh2 + sizeof(cwh2) / sizeof(float));
+std::vector<float> customWavetableAmplitude2 (cwa2, cwa2 + sizeof(cwa2) / sizeof(float));
+
+float cwh3[10] = {1.0, 12.0, 2.0, 15.0, 121.0, 20.0, 9.0, 31.0, 45.0, 5.0};
+float cwa3[10] = {1.0, 0.8, 0.9, 0.3, 0.5, 0.2, 0.1, 0.1, 0.6, 0.7};
+std::vector<float> customWavetableHarmonics3 (cwh3, cwh3 + sizeof(cwh3) / sizeof(float));
+std::vector<float> customWavetableAmplitude3 (cwa3, cwa3 + sizeof(cwa3) / sizeof(float));
+
 // Initialize wavetable objects
-wavetable voice0(0);
-wavetable voice1(1);
-wavetable voice2(0);
-wavetable voice3(1);
+wavetable voice0;
+wavetable voice1;
+wavetable voice2;
+wavetable voice3;
+
 wavetable* voice0Ptr = &voice0;
 wavetable* voice1Ptr = &voice1;
 wavetable* voice2Ptr = &voice2;
 wavetable* voice3Ptr = &voice3;
 
-morphedWavetable sawToSquare(voice0Ptr, voice1Ptr, 44100);
-morphedWavetable triToSine(voice2Ptr, voice3Ptr, 44100);
+morphedWavetable morphTable0(voice0Ptr, voice2Ptr, 44100);
+//morphedWavetable triToSine(voice2Ptr, voice3Ptr, 44100);
+
 
 // Initialize control variables for potentiometer inputs
 float morphSpeed0;
@@ -113,6 +136,10 @@ int yBezier;
 int boundaryLeft;
 int boundaryRight;
 
+float waveshape_distort(float in) {
+  return 1.5f * in - 0.5f * in *in * in;
+}
+
 void waveshapeCuber(float &in, float waveShaperIn) {
 	waveShaperIn = (waveShaperIn + 1.0) * 3.0;
 	if (waveShaperIn < 1.1) waveShaperIn = 1;
@@ -158,6 +185,11 @@ bool setup(BelaContext *context, void *userData)
 		printf("Error: for this project, you need the same number of input and output channels.\n");
 		return false;
 	}
+	
+	voice0.fillOtherWaveform(customWavetableHarmonics0, customWavetableAmplitude0);
+	voice1.fillOtherWaveform(customWavetableHarmonics1, customWavetableAmplitude1);
+	voice2.fillOtherWaveform(customWavetableHarmonics2, customWavetableAmplitude2);
+	voice3.fillOtherWaveform(customWavetableHarmonics3, customWavetableAmplitude3);
 	
 	scope.setup(1, context->audioSampleRate);
 	gAudioFramesPerAnalogFrame = context->audioFrames / context->analogFrames;
@@ -227,16 +259,18 @@ void render(BelaContext *context, void *userData)
 		}
 		
 		//out0 = voice0.getTableOutAndInc();
-		out0 = sawToSquare.outputMorph(morphSpeed0);
-		//waveshapeCuber(out0, waveShaper0);
+		//out1 = voice1.getTableOutAndInc();
+		
+		out0 = morphTable0.outputMorph(morphSpeed0, 0);
+		//out1 = triToSine.outputMorph(morphSpeed1);
 		
 		// Button on/off handling
 		if (voiceOn == HIGH) gain = 0.25;
 		if (voiceOn == LOW)  gain = 0.25;
 		
-		//scope.log(out2);
+		//scope.log(out0);
 		//out = (out0 + out1 + out2) * gain;
-		out = out0 * 0.25;
+		out = out0 * gain;
 		
 		for(unsigned int channel = 0; channel < context->audioOutChannels; channel++) {
 			audioWrite(context, n, channel, out);
@@ -247,9 +281,9 @@ void render(BelaContext *context, void *userData)
 		
 		// Print a message every second indicating the number of seconds elapsed
 		if(gCount % (int)(context->audioSampleRate*gInterval) == 0) {
-			//scope.trigger();
-		    gSecondsElapsed += gInterval;
-		    rt_printf("Frequency: %d\n", morphSpeed);
+			scope.trigger();
+		    //gSecondsElapsed += gInterval;
+		    rt_printf("Frequency: %f\n", voice0.getData());
 		}
 		*/
 	}
