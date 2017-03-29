@@ -150,7 +150,7 @@ void wavetable::fillOtherWaveform(std::vector<float>& listOfHarmonics, std::vect
 	
 	for (int i = 0; i < NUM_WAVETABLES_PER_VOICE; i++) {
 		for (int j = 0; j < listOfHarmonics.size(); j++) {
-			if (listOfHarmonics[j] < numHarmonicsPerTable[i]) {
+			if (listOfHarmonics[j] <= numHarmonicsPerTable[i]) {
 				generateHarmonic(wavetableContainer[i], listOfHarmonics[j], listOfAmplitudes[j]);
 			}
 		}
