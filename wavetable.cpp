@@ -2,7 +2,8 @@
 
 #include "wavetable.h"
 
-int numHarmonicsPerTable[11] = {1024, 512, 256, 128, 64, 32, 16, 8, 4, 2, 1};
+//int numHarmonicsPerTable[11] = {1024, 512, 256, 128, 64, 32, 16, 8, 4, 2, 1};
+int numHarmonicsPerTable[17] = {1024, 682, 455, 303, 202, 134, 89, 59, 39, 26, 17, 11, 7, 5, 4, 2, 1};
 
 wavetable::wavetable(int basicWaveform) {
 	
@@ -19,6 +20,12 @@ wavetable::wavetable(int basicWaveform) {
 	std::fill_n(wavetable8, WAVETABLE_SIZE, 0);
 	std::fill_n(wavetable9, WAVETABLE_SIZE, 0);
 	std::fill_n(wavetable10, WAVETABLE_SIZE, 0);
+	std::fill_n(wavetable11, WAVETABLE_SIZE, 0);
+	std::fill_n(wavetable12, WAVETABLE_SIZE, 0);
+	std::fill_n(wavetable13, WAVETABLE_SIZE, 0);
+	std::fill_n(wavetable14, WAVETABLE_SIZE, 0);
+	std::fill_n(wavetable15, WAVETABLE_SIZE, 0);
+	std::fill_n(wavetable16, WAVETABLE_SIZE, 0);
 
 	wavetableContainer[0] = wavetable0;
 	wavetableContainer[1] = wavetable1;
@@ -31,6 +38,12 @@ wavetable::wavetable(int basicWaveform) {
 	wavetableContainer[8] = wavetable8;
 	wavetableContainer[9] = wavetable9;
 	wavetableContainer[10] = wavetable10;
+	wavetableContainer[11] = wavetable11;
+	wavetableContainer[12] = wavetable12;
+	wavetableContainer[13] = wavetable13;
+	wavetableContainer[14] = wavetable14;
+	wavetableContainer[15] = wavetable15;
+	wavetableContainer[16] = wavetable16;
 	
 	switch(basicWaveform) {
 		case 0: fillSawtooth(); break;
@@ -52,21 +65,27 @@ float wavetable::getTableOutAndInc() {
 	return out;
 }
 
-void wavetable::chooseWaveTable(float pitchValue) {
+void wavetable::chooseWavetable(float pitchValue) {
 	
-	float cutoffFreq = 44100 / (WAVETABLE_SIZE / pitchValue);
+	cutoffFreq = 44100 / (WAVETABLE_SIZE / pitchValue);
 	
 	if (cutoffFreq < 20) {currentWavetable = wavetableContainer[0]; return;}
-	if (cutoffFreq < 40) {currentWavetable = wavetableContainer[1]; return;}
-	if (cutoffFreq < 80) {currentWavetable = wavetableContainer[2]; return;}
-	if (cutoffFreq < 160) {currentWavetable = wavetableContainer[3]; return;}
-	if (cutoffFreq < 320) {currentWavetable = wavetableContainer[4]; return;}
-	if (cutoffFreq < 640) {currentWavetable = wavetableContainer[5]; return;}
-	if (cutoffFreq < 1280) {currentWavetable = wavetableContainer[6]; return;}
-	if (cutoffFreq < 2560) {currentWavetable = wavetableContainer[7]; return;}
-	if (cutoffFreq < 5120) {currentWavetable = wavetableContainer[8]; return;}
-	if (cutoffFreq < 10240) {currentWavetable = wavetableContainer[9]; return;}
-	currentWavetable = wavetableContainer[10];
+	if (cutoffFreq < 30) {currentWavetable = wavetableContainer[1]; return;}
+	if (cutoffFreq < 45) {currentWavetable = wavetableContainer[2]; return;}
+	if (cutoffFreq < 67) {currentWavetable = wavetableContainer[3]; return;}
+	if (cutoffFreq < 101) {currentWavetable = wavetableContainer[4]; return;}
+	if (cutoffFreq < 151) {currentWavetable = wavetableContainer[5]; return;}
+	if (cutoffFreq < 227) {currentWavetable = wavetableContainer[6]; return;}
+	if (cutoffFreq < 341) {currentWavetable = wavetableContainer[7]; return;}
+	if (cutoffFreq < 512) {currentWavetable = wavetableContainer[8]; return;}
+	if (cutoffFreq < 768) {currentWavetable = wavetableContainer[9]; return;}
+	if (cutoffFreq < 1153) {currentWavetable = wavetableContainer[10]; return;}
+	if (cutoffFreq < 1729) {currentWavetable = wavetableContainer[11]; return;}
+	if (cutoffFreq < 2594) {currentWavetable = wavetableContainer[12]; return;}
+	if (cutoffFreq < 3892) {currentWavetable = wavetableContainer[13]; return;}
+	if (cutoffFreq < 5835) {currentWavetable = wavetableContainer[14]; return;}
+	if (cutoffFreq < 11025) {currentWavetable = wavetableContainer[15]; return;}
+	currentWavetable = wavetableContainer[16];
 }
 
 float wavetable::linearInterpolate() {
@@ -79,14 +98,14 @@ float wavetable::linearInterpolate() {
 }
 
 void wavetable::getPitch(float potInput) {
-	pitch = powf_neon(potInput + 1, 11.0);
-	chooseWaveTable(pitch);
+	pitch = powf(potInput + 1, 11.0);
+	chooseWavetable(pitch);
 }
 
 void wavetable::fillSawtooth() {
+	float amplitude;
 	for (int i = 0; i < NUM_WAVETABLES_PER_VOICE; i++) {
-		float amplitude;
-		for (int j = 1; j < numHarmonicsPerTable[i]; j++) {
+		for (int j = 1; j < numHarmonicsPerTable[i] + 1; j++) {
 			amplitude = 1.0 / j;
 			generateHarmonic(wavetableContainer[i], j, amplitude);
 		}
@@ -95,9 +114,9 @@ void wavetable::fillSawtooth() {
 
 
 void wavetable::fillSquare() {
+	float amplitude;
 	for (int i = 0; i < NUM_WAVETABLES_PER_VOICE; i++) {
-		float amplitude;
-		for (int j = 1; j < numHarmonicsPerTable[i]; j += 2) {
+		for (int j = 1; j < numHarmonicsPerTable[i] + 1; j += 2) {
 			amplitude = 1.0 / j;
 			generateHarmonic(wavetableContainer[i], j, amplitude);
 		}
@@ -105,9 +124,9 @@ void wavetable::fillSquare() {
 }
 
 void wavetable::fillTriangle() {
+	float amplitude;
 	for (int i = 0; i < NUM_WAVETABLES_PER_VOICE; i++) {
-		float amplitude;
-		for (int j = 1; j < numHarmonicsPerTable[i]; j += 2) {
+		for (int j = 1; j < numHarmonicsPerTable[i] + 1; j += 2) {
 			amplitude = 1.0 / (j * j);
 			generateHarmonic(wavetableContainer[i], j, amplitude);
 		}
@@ -115,8 +134,7 @@ void wavetable::fillTriangle() {
 }
 
 void wavetable::fillSine() {
-	float twoPi = 6.28318530718;
-	float sineInterval = twoPi / (float)WAVETABLE_SIZE;
+	float sineInterval = TWO_PI / (float)WAVETABLE_SIZE;
 	float sineValue = 0.0;
 	for (int i = 0; i < WAVETABLE_SIZE; i++) {
 		wavetable0[i] = sinf_neon(sineValue);
@@ -127,13 +145,31 @@ void wavetable::fillSine() {
 	}
 }
 
-void wavetable::generateHarmonic(float* wavetable, int harmonicMultiple, float amplitude) {
-	float twoPi = 6.28318530718;
-	float sineInterval = twoPi / ((float)WAVETABLE_SIZE / (float)harmonicMultiple);
+void wavetable::fillOtherWaveform(std::vector<float>& listOfHarmonics, std::vector<float>& listOfAmplitudes) {
+	if (listOfHarmonics.size() != listOfAmplitudes.size()) return;
+	
+	for (int i = 0; i < NUM_WAVETABLES_PER_VOICE; i++) {
+		for (int j = 0; j < listOfHarmonics.size(); j++) {
+			if (listOfHarmonics[j] < numHarmonicsPerTable[i]) {
+				generateHarmonic(wavetableContainer[i], listOfHarmonics[j], listOfAmplitudes[j]);
+			}
+		}
+	}
+}
+
+void wavetable::generateHarmonic(float* wavetable, float harmonicMultiple, float amplitude) {
+	float sineInterval = TWO_PI / ((float)WAVETABLE_SIZE / harmonicMultiple);
 	float sineValue = 0.0;
 	for (int i = 0; i < WAVETABLE_SIZE; i++) {
 		wavetable[i] = wavetable[i] + (sinf_neon(sineValue) * amplitude);
 		sineValue += sineInterval;
 	}
 }
+
+float wavetable::getData() {
+	return cutoffFreq;
+}
+
+
+
 
