@@ -113,6 +113,6 @@ int morphedWavetable::positiveModulo(int i, int n) {
 }
 
 void morphedWavetable::setMorphSpeed(float potInput) {
-	 morphSpeed = powf((potInput + 0.1), 2.0) * 2.5;
+	 morphSpeed = powf_neon((potInput + 0.1), 2.0) * 2.5;
 }
 
