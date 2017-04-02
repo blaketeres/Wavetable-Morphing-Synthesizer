@@ -28,12 +28,10 @@ public:
 	void getPitch(float potInput);
 	void chooseWavetable(float pitchValue);
 	
-	float getTableOutAndInc();
+	float getTableOut();
 	float linearInterpolate();
 	
 	float* wavetableContainer[NUM_WAVETABLES_PER_VOICE];
-	
-	float getData();
 	
 private:
 	float wavetable0[WAVETABLE_SIZE];

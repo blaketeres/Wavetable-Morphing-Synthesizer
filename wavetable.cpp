@@ -54,7 +54,7 @@ wavetable::wavetable(int basicWaveform) {
 	
 }
 
-float wavetable::getTableOutAndInc() {
+float wavetable::getTableOut() {
 	
 	float out = linearInterpolate();
 	readIndex += pitch;
@@ -165,11 +165,6 @@ void wavetable::generateHarmonic(float* wavetable, float harmonicMultiple, float
 		sineValue += sineInterval;
 	}
 }
-
-float wavetable::getData() {
-	return cutoffFreq;
-}
-
 
 
 
