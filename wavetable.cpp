@@ -2,7 +2,6 @@
 
 #include "wavetable.h"
 
-//int numHarmonicsPerTable[11] = {1024, 512, 256, 128, 64, 32, 16, 8, 4, 2, 1};
 int numHarmonicsPerTable[17] = {1024, 682, 455, 303, 202, 134, 89, 59, 39, 26, 17, 11, 7, 5, 4, 2, 1};
 
 wavetable::wavetable(int basicWaveform) {
