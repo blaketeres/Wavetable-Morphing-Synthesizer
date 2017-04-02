@@ -10,13 +10,13 @@
 class morphedWavetable : public wavetable {
 public:
 	// morph 2 tables
-	morphedWavetable(wavetable* a, wavetable* b, int sampleRate);
+	morphedWavetable(wavetable* a, wavetable* b);
 	
 	// morph 3 tables
-	morphedWavetable(wavetable* a, wavetable* b, wavetable* c, int sampleRate);
+	morphedWavetable(wavetable* a, wavetable* b, wavetable* c);
 	
 	//morph 4 tables
-	morphedWavetable(wavetable* a, wavetable* b, wavetable* c, wavetable* d, int sampleRate);
+	morphedWavetable(wavetable* a, wavetable* b, wavetable* c, wavetable* d);
 	
 	
 	enum MorphType {backAndForth, fullCircle, random};

@@ -66,8 +66,8 @@ wavetable* voice1Ptr = &voice1;
 wavetable* voice2Ptr = &voice2;
 wavetable* voice3Ptr = &voice3;
 
-morphedWavetable morphTable0(voice0Ptr, voice1Ptr, voice2Ptr, voice3Ptr, 44100);
-//morphedWavetable morphTable1(voice1Ptr, voice2Ptr, 44100);
+morphedWavetable morphTable0(voice0Ptr, voice1Ptr);
+morphedWavetable morphTable1(voice2Ptr, voice3Ptr);
 
 
 // Initialize control variables for potentiometer inputs

@@ -2,7 +2,7 @@
 
 #include "morphedWavetable.h"
 
-morphedWavetable::morphedWavetable(wavetable* a, wavetable* b, int sampleRate) {
+morphedWavetable::morphedWavetable(wavetable* a, wavetable* b) {
 	
 	srand (time(NULL));
 
@@ -19,7 +19,7 @@ morphedWavetable::morphedWavetable(wavetable* a, wavetable* b, int sampleRate) {
 	backAndForthIndex = 0;
 }
 
-morphedWavetable::morphedWavetable(wavetable* a, wavetable* b, wavetable* c, int sampleRate) {
+morphedWavetable::morphedWavetable(wavetable* a, wavetable* b, wavetable* c) {
 	
 	srand (time(NULL));
 	
@@ -37,7 +37,7 @@ morphedWavetable::morphedWavetable(wavetable* a, wavetable* b, wavetable* c, int
 	backAndForthIndex = 0;
 }
 
-morphedWavetable::morphedWavetable(wavetable* a, wavetable* b, wavetable* c, wavetable* d, int sampleRate) {
+morphedWavetable::morphedWavetable(wavetable* a, wavetable* b, wavetable* c, wavetable* d) {
 	
 	srand (time(NULL));
 	
@@ -99,7 +99,6 @@ float morphedWavetable::outputMorph(float timeInSeconds, int morphType) {
 		if (backAndForthIndex == numTables - 1 || backAndForthIndex == 0)
 			countUp = !countUp;
 	}
-	
 	return outA + outB;
 }
 
@@ -114,6 +113,6 @@ int morphedWavetable::positiveModulo(int i, int n) {
 }
 
 void morphedWavetable::setMorphSpeed(float potInput) {
-	 morphSpeed = powf((potInput) + 0.1), 2.0) * 2.5;
+	 morphSpeed = powf((potInput + 0.1), 2.0) * 2.5;
 }
 
