@@ -255,15 +255,9 @@ void render(BelaContext *context, void *userData)
 		
 		// Print a message every second indicating the number of seconds elapsed
 		if(gCount % (int)(context->audioSampleRate*gInterval) == 0) {
-<<<<<<< HEAD
-			scope.trigger();
-		    //gSecondsElapsed += gInterval;
-		    rt_printf("Frequency: %f\n", voice0.getData());
-=======
 			//scope.trigger();
 		    //gSecondsElapsed += gInterval;
 		    rt_printf("%d\n", voiceOn);
->>>>>>> bb601f4a70332f20bec59a60a956fc68c11860fe
 		}
 		*/
 	}
