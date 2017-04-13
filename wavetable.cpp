@@ -144,7 +144,7 @@ void wavetable::fillSine() {
 	}
 }
 
-void wavetable::fillOtherWaveform(std::vector<float>& listOfHarmonics, std::vector<float>& listOfAmplitudes) {
+void wavetable::fillOtherWaveform(std::vector<int>& listOfHarmonics, std::vector<float>& listOfAmplitudes) {
 	if (listOfHarmonics.size() != listOfAmplitudes.size()) return;
 	
 	for (int i = 0; i < NUM_WAVETABLES_PER_VOICE; i++) {
@@ -156,7 +156,7 @@ void wavetable::fillOtherWaveform(std::vector<float>& listOfHarmonics, std::vect
 	}
 }
 
-void wavetable::generateHarmonic(float* wavetable, float harmonicMultiple, float amplitude) {
+void wavetable::generateHarmonic(float* wavetable, int harmonicMultiple, float amplitude) {
 	float sineInterval = TWO_PI / ((float)WAVETABLE_SIZE / harmonicMultiple);
 	float sineValue = 0.0;
 	for (int i = 0; i < WAVETABLE_SIZE; i++) {

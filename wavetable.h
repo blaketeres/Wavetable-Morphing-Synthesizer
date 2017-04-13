@@ -21,9 +21,9 @@ public:
 	void fillSquare();
 	void fillTriangle();
 	void fillSine();
-	void fillOtherWaveform(std::vector<float>& listOfHarmonics, std::vector<float>& listOfAmplitudes);
+	void fillOtherWaveform(std::vector<int>& listOfHarmonics, std::vector<float>& listOfAmplitudes);
 	
-	void generateHarmonic(float* wavetable, float harmonicMultiple, float amplitude);
+	void generateHarmonic(float* wavetable, int harmonicMultiple, float amplitude);
 	
 	void getPitch(float potInput);
 	void chooseWavetable(float pitchValue);
