@@ -157,7 +157,7 @@ void wavetable::fillOtherWaveform(std::vector<int>& listOfHarmonics, std::vector
 }
 
 void wavetable::generateHarmonic(float* wavetable, int harmonicMultiple, float amplitude) {
-	float sineInterval = TWO_PI / ((float)WAVETABLE_SIZE / harmonicMultiple);
+	float sineInterval = TWO_PI / ((float)WAVETABLE_SIZE / (float)harmonicMultiple);
 	float sineValue = 0.0;
 	for (int i = 0; i < WAVETABLE_SIZE; i++) {
 		wavetable[i] = wavetable[i] + (sinf_neon(sineValue) * amplitude);

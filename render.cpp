@@ -24,16 +24,16 @@ int gAudioFramesPerAnalogFrame;
 // Initialize wavetable objects
 
 std::vector<int> customWavetableHarmonics0;
-std::vector<float> customWavetableAmplitude0;
+std::vector<float> customWavetableAmplitudes0;
 
 std::vector<int> customWavetableHarmonics1;
-std::vector<float> customWavetableAmplitude1;
+std::vector<float> customWavetableAmplitudes1;
 
 std::vector<int> customWavetableHarmonics2;
-std::vector<float> customWavetableAmplitude2;
+std::vector<float> customWavetableAmplitudes2;
 
 std::vector<int> customWavetableHarmonics3;
-std::vector<float> customWavetableAmplitude3;
+std::vector<float> customWavetableAmplitudes3;
 
 wavetable voice0;
 wavetable voice1;
@@ -45,7 +45,7 @@ wavetable* voice1Ptr = &voice1;
 wavetable* voice2Ptr = &voice2;
 wavetable* voice3Ptr = &voice3;
 
-morphedWavetable morphTable0(voice0Ptr, voice1Ptr, voice2Ptr, voice3Ptr);
+//morphedWavetable morphTable0(voice0Ptr, voice1Ptr, voice2Ptr, voice3Ptr);
 //morphedWavetable morphTable1(voice2Ptr, voice3Ptr);
 
 
@@ -98,13 +98,13 @@ int encoder1Status = LOW;
 
 int encoder2PinA = P8_28;
 int encoder2PinB = P8_29;
-int encoder2Pos = 0;
+int encoder2Pos = -1;
 int encoder2PinALast = LOW;
 int encoder2Status = LOW;
 
 int encoder3PinA = P8_30;
 int encoder3PinB = P9_12;
-int encoder3Pos = 0;
+int encoder3Pos = -1;
 int encoder3PinALast = LOW;
 int encoder3Status = LOW;
 
@@ -137,16 +137,15 @@ void handleEncoder(BelaContext *context, int encoderStatus, int encoderPinA, int
 	encoderPinALast = encoderStatus;
 }
 
-void addHarmonicToVector(int selectedVoice, int harmonicMultiple, float harmonicAmplitude) {
+void addHarmonicToVector(unsigned int selectedVoice, unsigned int harmonicMultiple, float harmonicAmplitude) {
 	switch (selectedVoice) {
 		case 0:{
 			if(std::find(customWavetableHarmonics0.begin(), customWavetableHarmonics0.end(), harmonicMultiple) != customWavetableHarmonics0.end())
 			    break;
 			else {
-			customWavetableHarmonics0.emplace_back(harmonicMultiple);
-			customWavetableAmplitude0.emplace_back(harmonicAmplitude);
-			sort(customWavetableHarmonics0.begin(), customWavetableHarmonics0.end());
-			sort(customWavetableAmplitude0.begin(), customWavetableAmplitude0.end());
+			customWavetableHarmonics0.push_back(harmonicMultiple);
+			customWavetableAmplitudes0.push_back(harmonicAmplitude);
+			voice0.fillOtherWaveform(customWavetableHarmonics0, customWavetableAmplitudes0);
 			break;
 			}
 		}
@@ -154,10 +153,9 @@ void addHarmonicToVector(int selectedVoice, int harmonicMultiple, float harmonic
 			if(std::find(customWavetableHarmonics1.begin(), customWavetableHarmonics1.end(), harmonicMultiple) != customWavetableHarmonics1.end())
 			    break;
 			else {
-			customWavetableHarmonics1.emplace_back(harmonicMultiple);
-			customWavetableAmplitude1.emplace_back(harmonicAmplitude);
-			sort(customWavetableHarmonics1.begin(), customWavetableHarmonics1.end());
-			sort(customWavetableAmplitude1.begin(), customWavetableAmplitude1.end());
+			customWavetableHarmonics1.push_back(harmonicMultiple);
+			customWavetableAmplitudes1.push_back(harmonicAmplitude);
+			voice0.fillOtherWaveform(customWavetableHarmonics1, customWavetableAmplitudes1);
 			break;
 			}
 		}
@@ -165,10 +163,9 @@ void addHarmonicToVector(int selectedVoice, int harmonicMultiple, float harmonic
 			if(std::find(customWavetableHarmonics2.begin(), customWavetableHarmonics2.end(), harmonicMultiple) != customWavetableHarmonics2.end())
 			    break;
 			else {
-			customWavetableHarmonics2.emplace_back(harmonicMultiple);
-			customWavetableAmplitude2.emplace_back(harmonicAmplitude);
-			sort(customWavetableHarmonics2.begin(), customWavetableHarmonics2.end());
-			sort(customWavetableAmplitude2.begin(), customWavetableAmplitude2.end());
+			customWavetableHarmonics2.push_back(harmonicMultiple);
+			customWavetableAmplitudes2.push_back(harmonicAmplitude);
+			voice0.fillOtherWaveform(customWavetableHarmonics2, customWavetableAmplitudes2);
 			break;
 			}
 		}
@@ -176,23 +173,80 @@ void addHarmonicToVector(int selectedVoice, int harmonicMultiple, float harmonic
 			if(std::find(customWavetableHarmonics3.begin(), customWavetableHarmonics3.end(), harmonicMultiple) != customWavetableHarmonics3.end())
 			    break;
 			else {
-			customWavetableHarmonics3.emplace_back(harmonicMultiple);
-			customWavetableAmplitude3.emplace_back(harmonicAmplitude);
-			sort(customWavetableHarmonics3.begin(), customWavetableHarmonics3.end());
-			sort(customWavetableAmplitude3.begin(), customWavetableAmplitude3.end());
+			customWavetableHarmonics3.push_back(harmonicMultiple);
+			customWavetableAmplitudes3.push_back(harmonicAmplitude);
+			voice0.fillOtherWaveform(customWavetableHarmonics3, customWavetableAmplitudes3);
 			break;
 			}
 		}
 	}
 }
 
-int findExistingHarmonic (int selectedVoice, int index) {
+void removeHarmonicFromVector(unsigned int selectedVoice, unsigned int harmonicMultiple) {
 	switch (selectedVoice) {
-		case 0: return customWavetableHarmonics0[index];
-		case 1: return customWavetableHarmonics1[index];
-		case 2: return customWavetableHarmonics2[index];
-		case 3: return customWavetableHarmonics3[index];
+		case 0: {
+			std::vector<int>::iterator i = customWavetableHarmonics0.begin();
+			i = find(customWavetableHarmonics0.begin(), customWavetableHarmonics0.end(), harmonicMultiple);
+			if (i != customWavetableHarmonics0.end()) {
+       			int index = distance(customWavetableHarmonics0.begin(), i);
+       			customWavetableHarmonics0.erase(customWavetableHarmonics0.begin() + index);
+			}
+			voice0.fillOtherWaveform(customWavetableHarmonics0, customWavetableAmplitudes0);
+			break;
+		}
+		case 1: {
+			std::vector<int>::iterator i = customWavetableHarmonics1.begin();
+			i = find(customWavetableHarmonics1.begin(), customWavetableHarmonics1.end(), harmonicMultiple);
+			if (i != customWavetableHarmonics1.end()) {
+       			int index = distance(customWavetableHarmonics1.begin(), i);
+       			customWavetableHarmonics1.erase(customWavetableHarmonics1.begin() + index);
+			}
+			voice0.fillOtherWaveform(customWavetableHarmonics1, customWavetableAmplitudes1);
+			break;
+		}
+		case 2: {
+			std::vector<int>::iterator i = customWavetableHarmonics2.begin();
+			i = find(customWavetableHarmonics2.begin(), customWavetableHarmonics2.end(), harmonicMultiple);
+			if (i != customWavetableHarmonics2.end()) {
+       			int index = distance(customWavetableHarmonics2.begin(), i);
+       			customWavetableHarmonics2.erase(customWavetableHarmonics2.begin() + index);
+			}
+			voice0.fillOtherWaveform(customWavetableHarmonics2, customWavetableAmplitudes2);
+			break;
+		}
+		case 3: {
+			std::vector<int>::iterator i = customWavetableHarmonics3.begin();
+			i = find(customWavetableHarmonics3.begin(), customWavetableHarmonics3.end(), harmonicMultiple);
+			if (i != customWavetableHarmonics3.end()) {
+       			int index = distance(customWavetableHarmonics3.begin(), i);
+       			customWavetableHarmonics3.erase(customWavetableHarmonics3.begin() + index);
+			}
+			voice0.fillOtherWaveform(customWavetableHarmonics3, customWavetableAmplitudes3);
+			break;
+		}
 	}
+}
+
+int findExistingHarmonic (unsigned int selectedVoice, unsigned int index) {
+	switch (selectedVoice) {
+		case 0: {
+			index = index % customWavetableHarmonics0.size();
+			return customWavetableHarmonics0[index];
+		}
+		case 1: {
+			index = index % customWavetableHarmonics1.size();
+			return customWavetableHarmonics1[index];
+		}
+		case 2: {
+			index = index % customWavetableHarmonics2.size();
+			return customWavetableHarmonics2[index];
+		}
+		case 3: {
+			index = index % customWavetableHarmonics3.size();
+			return customWavetableHarmonics3[index];
+		}
+	}
+	return 0;
 }
 
 bool setup(BelaContext *context, void *userData)
@@ -242,12 +296,18 @@ void render(BelaContext *context, void *userData)
 	float out3;
 	float gain;
 	
-	int newHarmonic;
+	unsigned int newHarmonic;
+	unsigned int existingHarmonic;
+	unsigned int selectedVoice;
 	float newHarmonicAmplitude;
-	int existingHarmonic;
-	int selectedVoice;
 	
 	for(unsigned int n = 0; n < context->audioFrames; n++) {
+		handleEncoder(context, encoder0Status, encoder0PinA, encoder0PinALast, encoder0PinB, encoder0Pos, n);
+		handleEncoder(context, encoder1Status, encoder1PinA, encoder1PinALast, encoder1PinB, encoder1Pos, n);
+		handleEncoder(context, encoder2Status, encoder2PinA, encoder2PinALast, encoder2PinB, encoder2Pos, n);
+		handleEncoder(context, encoder3Status, encoder3PinA, encoder3PinALast, encoder3PinB, encoder3Pos, n);
+		//handleEncoder(context, encoder4Status, encoder4PinA, encoder4PinALast, encoder4PinB, encoder4Pos, n);
+		
 		addHarmonic = digitalRead(context, 0, P8_07);
 		removeHarmonic = digitalRead(context, 0, P8_08);
 		pointSelect = digitalRead(context, 0, P8_09);
@@ -255,19 +315,17 @@ void render(BelaContext *context, void *userData)
 		voiceToggle = digitalRead(context, 0, P8_11);
 		flipBoundaries = digitalRead(context, 0, P8_12);
 		
-		handleEncoder(context, encoder0Status, encoder0PinA, encoder0PinALast, encoder0PinB, encoder0Pos, n);
-		handleEncoder(context, encoder1Status, encoder1PinA, encoder1PinALast, encoder1PinB, encoder1Pos, n);
-		handleEncoder(context, encoder2Status, encoder2PinA, encoder2PinALast, encoder2PinB, encoder2Pos, n);
-		handleEncoder(context, encoder3Status, encoder3PinA, encoder3PinALast, encoder3PinB, encoder3Pos, n);
-		handleEncoder(context, encoder4Status, encoder4PinA, encoder4PinALast, encoder4PinB, encoder4Pos, n);
-		
 		newHarmonic = constrain(encoder0Pos, 1, MAX_HARMONICS);
-		newHarmonicAmplitude = constrain((encoder1Pos / 100.0), 0, 1);
-		existingHarmonic = 
+		newHarmonicAmplitude = constrain((encoder1Pos / 100.0), 0.0, 1.0);
+		selectedVoice = encoder2Pos % 4;
+		//existingHarmonic = findExistingHarmonic(selectedVoice, encoder3Pos);
+		
+		//if (addHarmonic == HIGH) addHarmonicToVector(selectedVoice, newHarmonic, newHarmonicAmplitude);
+		//if (removeHarmonic == HIGH) removeHarmonicFromVector(selectedVoice, existingHarmonic);
 		
 		if(!(n % gAudioFramesPerAnalogFrame)) {
-			morphSpeed0 = analogRead(context, n/gAudioFramesPerAnalogFrame, morphSpeed0Channel);
-			morphTable0.setMorphSpeed(morphSpeed0);
+			//morphSpeed0 = analogRead(context, n/gAudioFramesPerAnalogFrame, morphSpeed0Channel);
+			//morphTable0.setMorphSpeed(morphSpeed0);
 			
 			//morphSpeed1 = analogRead(context, n/gAudioFramesPerAnalogFrame, morphSpeed1Channel);
 			//morphTable1.setMorphSpeed(morphSpeed1);
@@ -305,7 +363,7 @@ void render(BelaContext *context, void *userData)
 		for(unsigned int channel = 0; channel < context->audioOutChannels; channel++) {
 			audioWrite(context, n, channel, out);
 		}
-		/*
+		
 		// Increment a counter on every frame
 		gCount++;
 		
@@ -313,9 +371,11 @@ void render(BelaContext *context, void *userData)
 		if(gCount % (int)(context->audioSampleRate*gInterval) == 0) {
 			//scope.trigger();
 		    //gSecondsElapsed += gInterval;
-		    rt_printf("%d\n", selectedVoice);
+		    rt_printf("Selected Voice: %d\n", selectedVoice);
+		    rt_printf("Harmonic To Add: %d\n", newHarmonic);
+		    rt_printf("Harmonic Amplitude To Add: %f\n", newHarmonicAmplitude);
+		    rt_printf("Selected Harmonic: %f\n", existingHarmonic);
 		}
-		*/
 	}
 }
 
