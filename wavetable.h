@@ -11,6 +11,8 @@
 #include <cmath>
 #include <math_neon.h>
 #include <vector>
+#include <algorithm>
+#include <Bela.h>
 
 class wavetable
 {
@@ -36,6 +38,10 @@ public:
 	// Generates a single harmonic (sine wave) off of a base
 	// table given a multiple value and an amplitude
 	void generateHarmonic(float* wavetable, int harmonicMultiple, float amplitude);
+	
+	
+	// Normalizes a wavetable (-1.0 to 1.0)
+	void normalize(float* wavetable);
 	
 	// Gets a value that is used to determine the speed
 	// at which tables are read. Not related to frequency in Hz

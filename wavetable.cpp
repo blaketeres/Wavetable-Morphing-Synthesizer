@@ -181,13 +181,15 @@ void wavetable::fillSine() {
 void wavetable::fillVectorWaveform(std::vector<int>& listOfHarmonics, std::vector<float>& listOfAmplitudes) {
 	
 	// check that every harmonic has an amplitude value and vice versa
-	if (listOfHarmonics.size() != listOfAmplitudes.size()) return;
+	//if (listOfHarmonics.size() != listOfAmplitudes.size()) return;
+	
+	int numHarmonics = listOfHarmonics.size();
 	
 	// loop through all tables
 	for (int i = 0; i < NUM_WAVETABLES_PER_VOICE; i++) {
-		
-		// loop through all of the harmonics in the vector
-		for (int j = 0; j < listOfHarmonics.size(); j++) {
+			
+		// loop through all of the harmonics in the vector after
+		for (int j = 0; j < numHarmonics; j++) {
 			
 			// if the harmonic is allowed in each wavetable by frequency
 			if (listOfHarmonics[j] <= numHarmonicsPerTable[i]) {
@@ -212,7 +214,17 @@ void wavetable::generateHarmonic(float* wavetable, int harmonicMultiple, float a
 		wavetable[i] = wavetable[i] + (sinf_neon(sineValue) * amplitude);
 		sineValue += sineInterval;
 	}
+	normalize(wavetable);
 }
 
+void wavetable::normalize(float* wavetable) {
+	float max = *std::max_element(wavetable, wavetable + WAVETABLE_SIZE);
+	float min = *std::min_element(wavetable, wavetable + WAVETABLE_SIZE);
+	if (max > 1 || min < -1) {
+		for (int i = 0; i < WAVETABLE_SIZE; i++) {
+			wavetable[i] = map(wavetable[i], min, max, -1.0, 1.0);
+		}
+	}
+}
 
 
