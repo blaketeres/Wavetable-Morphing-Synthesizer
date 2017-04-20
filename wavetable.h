@@ -39,7 +39,6 @@ public:
 	// table given a multiple value and an amplitude
 	void generateHarmonic(float* wavetable, int harmonicMultiple, float amplitude);
 	
-	
 	// Normalizes a wavetable (-1.0 to 1.0)
 	void normalize(float* wavetable);
 	
@@ -59,6 +58,9 @@ public:
 	// Interpolation function called when the
 	// readIndex is not an integer value
 	float linearInterpolate();
+	
+	// Fills the tables with 0s
+	void clearAllTables();
 	
 	// Array of pointers to all of the wavetables
 	float* wavetableContainer[NUM_WAVETABLES_PER_VOICE];

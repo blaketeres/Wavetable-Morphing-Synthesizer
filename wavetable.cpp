@@ -9,25 +9,6 @@ wavetable::wavetable(int basicWaveform) {
 	
 	// Initialize readIndex at 0
 	readIndex = 0.0;
-	
-	// Fill wavetables with 0's
-	std::fill_n(wavetable0, WAVETABLE_SIZE, 0);
-	std::fill_n(wavetable1, WAVETABLE_SIZE, 0);
-	std::fill_n(wavetable2, WAVETABLE_SIZE, 0);
-	std::fill_n(wavetable3, WAVETABLE_SIZE, 0);
-	std::fill_n(wavetable4, WAVETABLE_SIZE, 0);
-	std::fill_n(wavetable5, WAVETABLE_SIZE, 0);
-	std::fill_n(wavetable6, WAVETABLE_SIZE, 0);
-	std::fill_n(wavetable7, WAVETABLE_SIZE, 0);
-	std::fill_n(wavetable8, WAVETABLE_SIZE, 0);
-	std::fill_n(wavetable9, WAVETABLE_SIZE, 0);
-	std::fill_n(wavetable10, WAVETABLE_SIZE, 0);
-	std::fill_n(wavetable11, WAVETABLE_SIZE, 0);
-	std::fill_n(wavetable12, WAVETABLE_SIZE, 0);
-	std::fill_n(wavetable13, WAVETABLE_SIZE, 0);
-	std::fill_n(wavetable14, WAVETABLE_SIZE, 0);
-	std::fill_n(wavetable15, WAVETABLE_SIZE, 0);
-	std::fill_n(wavetable16, WAVETABLE_SIZE, 0);
 
 	// Put pointers to each wavetable in the wavetable container
 	wavetableContainer[0] = wavetable0;
@@ -47,6 +28,8 @@ wavetable::wavetable(int basicWaveform) {
 	wavetableContainer[14] = wavetable14;
 	wavetableContainer[15] = wavetable15;
 	wavetableContainer[16] = wavetable16;
+	
+	clearAllTables();
 	
 	// Optional constructor argument to build a saw/square/tri/sine wave upon initialization
 	switch(basicWaveform) {
@@ -224,6 +207,12 @@ void wavetable::normalize(float* wavetable) {
 		for (int i = 0; i < WAVETABLE_SIZE; i++) {
 			wavetable[i] = map(wavetable[i], min, max, -1.0, 1.0);
 		}
+	}
+}
+
+void wavetable::clearAllTables() {
+	for (int i = 0; i < NUM_WAVETABLES_PER_VOICE; i++) {
+		std::fill_n(wavetableContainer[i], WAVETABLE_SIZE, 0);
 	}
 }
 
