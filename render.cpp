@@ -5,11 +5,11 @@ Blake Teres
 
 To Do:
 
-- Dynamically initialize table morphing
 - Add fractional harmonics (inharmonics)
-- Add stereo options
-- Add volume control for voices
+- Add stereo capabilities
+- Perfect volume control for voices
 - Add waveshaping
+- Add save/load feature
 */
 
 #include <Bela.h>
@@ -56,11 +56,11 @@ std::vector<morphedWavetable> morphTables;
 
 
 // Initialize control variables for potentiometer inputs
-float morphSpeed0;
-int morphSpeed0Channel = 0;
+float morphSpeed;
+int morphSpeedChannel = 0;
 
-float morphSpeed1;
-int morphSpeed1Channel = 1;
+float morphMod;
+int morphModChannel = 1;
 
 float waveShaper0;
 int waveShaper0Channel = 2;
@@ -87,12 +87,12 @@ int removeHarmonic;
 int scrollMorphs;
 int morphOnOff;
 
+int morphIndex;
+
 bool removeFlag;
 bool morphFlag;
 bool morphOn;
 bool morphOnOffFlag;
-
-int morphIndex;
 
 int encoder0PinA = P8_15;
 int encoder0PinB = P8_16;
@@ -120,7 +120,7 @@ int encoder3Status = LOW;
 
 int encoder4PinA = P9_14;
 int encoder4PinB = P9_16;
-int encoder4Pos = -1;
+int encoder4Pos = 99;
 int encoder4PinALast = LOW;
 int encoder4Status = LOW;
 
@@ -404,11 +404,11 @@ void render(BelaContext *context, void *userData)
 		
 		
 		if(!(n % gAudioFramesPerAnalogFrame)) {
-			morphSpeed0 = analogRead(context, n/gAudioFramesPerAnalogFrame, morphSpeed0Channel);
-			morphTables[0].setMorphSpeed(morphSpeed0);
+			morphSpeed = analogRead(context, n/gAudioFramesPerAnalogFrame, morphSpeedChannel) + 0.1;
+			morphTables[morphIndex].setMorphSpeed(morphSpeed);
 			
-			morphSpeed1 = analogRead(context, n/gAudioFramesPerAnalogFrame, morphSpeed1Channel);
-			morphTables[1].setMorphSpeed(morphSpeed1);
+			morphMod = analogRead(context, n/gAudioFramesPerAnalogFrame, morphModChannel);
+			morphTables[morphIndex].setMorphMod(morphMod);
 			
 			waveShaper0 = analogRead(context, n/gAudioFramesPerAnalogFrame, waveShaper0Channel);
 			waveShaper1 = analogRead(context, n/gAudioFramesPerAnalogFrame, waveShaper1Channel);
@@ -436,7 +436,7 @@ void render(BelaContext *context, void *userData)
 		}
 		
 		else {
-			out = morphTables[morphIndex].outputMorph(morphSpeed0, morphedWavetable::MorphType::backAndForth);
+			out = morphTables[morphIndex].outputMorph(morphedWavetable::MorphType::fullCircle);
 		}
 		
 		scope.log(out);
@@ -445,10 +445,8 @@ void render(BelaContext *context, void *userData)
 			audioWrite(context, n, channel, out);
 		}
 		
-		// Increment a counter on every frame
+		// Print stuff
 		gCount++;
-		
-		// Print a message every second indicating the number of seconds elapsed
 		if(gCount % (int)(context->audioSampleRate*gInterval) == 0) {
 			scope.trigger();
 		    //gSecondsElapsed += gInterval;
