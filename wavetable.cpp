@@ -187,7 +187,7 @@ void wavetable::fillVectorWaveform(std::vector<int>& listOfHarmonics, std::vecto
 	}
 }
 
-void wavetable::generateHarmonic(float* wavetable, int harmonicMultiple, float amplitude) {
+void wavetable::generateHarmonic(float* wavetable, unsigned int harmonicMultiple, float amplitude) {
 	
 	// find discrete interval between points in wavetable
 	float sineInterval = TWO_PI / ((float)WAVETABLE_SIZE / (float)harmonicMultiple);

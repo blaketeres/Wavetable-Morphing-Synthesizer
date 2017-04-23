@@ -18,12 +18,20 @@ public:
 	//morph 4 tables
 	morphedWavetable(wavetable* a, wavetable* b, wavetable* c, wavetable* d);
 	
+	// Give names to types of morphing
+	enum MorphType {backAndForth, fullCircle, random, hard};
 	
-	enum MorphType {backAndForth, fullCircle, random};
-	float outputMorph(float timeInSeconds, int morphType);
-	int positiveModulo(int i, int n);
+	// Grab morphed table output
+	float outputMorph(int morphType);
+	
+	// Generate a random integer
 	void getRandomInt();
+	
+	// Modify morph speed from pot input
 	void setMorphSpeed(float potInput);
+	
+	// Modify morph mod from pot input
+	void setMorphMod(float potInput);
 
 private:
 
@@ -32,7 +40,11 @@ private:
 	float phaser;
 	float phaserInterval;
 	float morphSpeed;
-
+	
+	float mod;
+	float modInterval;
+	float modPhaser;
+	
 	int currentTable;
 	int backAndForthIndex;
 	int morphType;
@@ -42,7 +54,6 @@ private:
 	
 	int randomInt;
 	int lastRandomInt;
-	
 };
 
 #endif

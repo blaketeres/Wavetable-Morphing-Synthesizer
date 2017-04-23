@@ -37,7 +37,7 @@ public:
 	
 	// Generates a single harmonic (sine wave) off of a base
 	// table given a multiple value and an amplitude
-	void generateHarmonic(float* wavetable, int harmonicMultiple, float amplitude);
+	void generateHarmonic(float* wavetable, unsigned int harmonicMultiple, float amplitude);
 	
 	// Normalizes a wavetable (-1.0 to 1.0)
 	void normalize(float* wavetable);

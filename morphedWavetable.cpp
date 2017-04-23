@@ -17,6 +17,7 @@ morphedWavetable::morphedWavetable(wavetable* a, wavetable* b) {
 	randomInt = 1;
 	lastRandomInt = 0;
 	backAndForthIndex = 0;
+	modPhaser = 0;
 }
 
 morphedWavetable::morphedWavetable(wavetable* a, wavetable* b, wavetable* c) {
@@ -35,6 +36,7 @@ morphedWavetable::morphedWavetable(wavetable* a, wavetable* b, wavetable* c) {
 	randomInt = 1;
 	lastRandomInt = 0;
 	backAndForthIndex = 0;
+	modPhaser = 0;
 }
 
 morphedWavetable::morphedWavetable(wavetable* a, wavetable* b, wavetable* c, wavetable* d) {
@@ -54,11 +56,12 @@ morphedWavetable::morphedWavetable(wavetable* a, wavetable* b, wavetable* c, wav
 	randomInt = 1;
 	lastRandomInt = 0;
 	backAndForthIndex = 0;
+	modPhaser = 0;
 }
 
-float morphedWavetable::outputMorph(float timeInSeconds, int morphType) {
+float morphedWavetable::outputMorph(int morphType) {
 	
-	int numSamplesToCrossFade = (int)(timeInSeconds * 44100);
+	float numSamplesToCrossFade = morphSpeed * 44100;
 	phaserInterval = 1.0 / numSamplesToCrossFade;
 	
 	float outA;
@@ -67,22 +70,27 @@ float morphedWavetable::outputMorph(float timeInSeconds, int morphType) {
 	switch(morphType) {
 		case backAndForth: {
 			if (countUp) {
-				outA = container[backAndForthIndex]->getTableOut() * (-phaser + 1);
-				outB = container[backAndForthIndex + 1]->getTableOut() * phaser;
+				outA = container[backAndForthIndex]->getTableOut() * powf(-phaser + 1, 2);
+				outB = container[backAndForthIndex + 1]->getTableOut() * powf(phaser, 2);
 				break;
 			}
-			outA = container[backAndForthIndex - 1]->getTableOut() * phaser;
-			outB = container[backAndForthIndex]->getTableOut() * (-phaser + 1);
+			outA = container[backAndForthIndex - 1]->getTableOut() * powf(phaser, 2);
+			outB = container[backAndForthIndex]->getTableOut() * powf(-phaser + 1, 2);
 			break;
 		}
 		case fullCircle: {
-			outA = container[currentTable]->getTableOut() * (-phaser + 1);
-			outB = container[(currentTable + 1) % numTables]->getTableOut() * phaser;
+			outA = container[currentTable]->getTableOut() * powf(-phaser + 1, 2);
+			outB = container[(currentTable + 1) % numTables]->getTableOut() * powf(phaser, 2);
 			break;
 		}
 		case random: {
-			outA = container[lastRandomInt]->getTableOut() * (-phaser + 1);
-			outB = container[randomInt]->getTableOut() * phaser;
+			outA = container[lastRandomInt]->getTableOut() * powf(-phaser + 1, 2);
+			outB = container[randomInt]->getTableOut() * powf(phaser, 2);
+			break;
+		}
+		case hard: {
+			outA = container[currentTable]->getTableOut();
+			outB = 0;
 			break;
 		}
 	}
@@ -108,11 +116,14 @@ void morphedWavetable::getRandomInt() {
 		getRandomInt();
 }
 
-int morphedWavetable::positiveModulo(int i, int n) {
-    return (i % n + n) % n;
+void morphedWavetable::setMorphSpeed(float potInput) {
+	 morphSpeed = powf(potInput, 2) * 5;
 }
 
-void morphedWavetable::setMorphSpeed(float potInput) {
-	 morphSpeed = powf_neon((potInput + 0.1), 2.0) * 2.5;
+void morphedWavetable::setMorphMod(float potInput) {
+	modInterval = potInput;
+	modPhaser += modInterval;
+	if (modPhaser >= TWO_PI) modPhaser = modPhaser - TWO_PI;
+	mod = sinf(modPhaser);
 }
 
