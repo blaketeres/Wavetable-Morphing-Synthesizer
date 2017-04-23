@@ -19,7 +19,7 @@ public:
 	morphedWavetable(wavetable* a, wavetable* b, wavetable* c, wavetable* d);
 	
 	// Give names to types of morphing
-	enum MorphType {backAndForth, fullCircle, random};
+	enum MorphType {backAndForth, fullCircle, random, hard};
 	
 	// Grab morphed table output
 	float outputMorph(int morphType);

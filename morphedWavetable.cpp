@@ -88,6 +88,11 @@ float morphedWavetable::outputMorph(int morphType) {
 			outB = container[randomInt]->getTableOut() * powf(phaser, 2);
 			break;
 		}
+		case hard: {
+			outA = container[currentTable]->getTableOut();
+			outB = 0;
+			break;
+		}
 	}
 	
 	phaser += phaserInterval;

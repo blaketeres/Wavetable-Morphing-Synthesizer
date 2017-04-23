@@ -5,7 +5,6 @@ Blake Teres
 
 To Do:
 
-- Add fractional harmonics (inharmonics)
 - Add stereo capabilities
 - Perfect volume control for voices
 - Add waveshaping
@@ -86,14 +85,18 @@ int addHarmonic;
 int removeHarmonic;
 int scrollMorphs;
 int morphOnOff;
-
+int morphTypeButton;
+int morphType;
 int morphIndex;
 
 bool removeFlag;
 bool morphFlag;
 bool morphOn;
 bool morphOnOffFlag;
+bool morphTypeFlag;
 
+
+// Initialize rotary encoders
 int encoder0PinA = P8_15;
 int encoder0PinB = P8_16;
 int encoder0Pos = 0;
@@ -124,6 +127,13 @@ int encoder4Pos = 99;
 int encoder4PinALast = LOW;
 int encoder4Status = LOW;
 
+unsigned int newHarmonic;
+unsigned int existingHarmonic;
+unsigned int selectedVoice;
+float newHarmonicAmplitude;
+
+
+// Initialize output variables
 float out;
 float out0;
 float out1;
@@ -250,7 +260,7 @@ void removeHarmonicFromVector(unsigned int selectedVoice, unsigned int harmonicM
 	}
 }
 
-int findExistingHarmonic (unsigned int selectedVoice, unsigned int index) {
+float findExistingHarmonic (unsigned int selectedVoice, unsigned int index) {
 	switch (selectedVoice) {
 		case 0: {
 			if (customWavetableHarmonics0.size() > 0) {
@@ -336,6 +346,7 @@ bool setup(BelaContext *context, void *userData)
 	morphOn = false;
 	morphOnOffFlag = false;
 	removeFlag = false;
+	morphTypeFlag = false;
 	
 	pinMode(context, 0, P8_07, INPUT);
 	pinMode(context, 0, P8_08, INPUT);
@@ -360,11 +371,6 @@ bool setup(BelaContext *context, void *userData)
 void render(BelaContext *context, void *userData)
 {
 	
-	unsigned int newHarmonic;
-	unsigned int existingHarmonic;
-	unsigned int selectedVoice;
-	float newHarmonicAmplitude;
-	
 	for(unsigned int n = 0; n < context->audioFrames; n++) {
 		handleEncoder(context, encoder0Status, encoder0PinA, encoder0PinALast, encoder0PinB, encoder0Pos, n);
 		handleEncoder(context, encoder1Status, encoder1PinA, encoder1PinALast, encoder1PinB, encoder1Pos, n);
@@ -376,6 +382,7 @@ void render(BelaContext *context, void *userData)
 		removeHarmonic = digitalRead(context, 0, P8_08);
 		scrollMorphs = digitalRead(context, 0, P8_09);
 		morphOnOff = digitalRead(context, 0, P8_10);
+		morphTypeButton = digitalRead(context, 0, P8_11);
 		
 		newHarmonic = constrain(encoder0Pos, 1, MAX_HARMONICS);
 		newHarmonicAmplitude = constrain((encoder1Pos / 100.0), 0.0, 1.0);
@@ -400,6 +407,11 @@ void render(BelaContext *context, void *userData)
 		if (morphOnOff == HIGH && morphOnOffFlag == true) {
 			morphOn = !morphOn;
 			morphOnOffFlag = false;
+		}
+		if (morphTypeButton == LOW && morphTypeFlag == false) morphTypeFlag = true;
+		if (morphTypeButton == HIGH && morphTypeFlag == true) {
+			morphType = (morphType + 1) % 4;
+			morphTypeFlag = false;
 		}
 		
 		
@@ -436,7 +448,7 @@ void render(BelaContext *context, void *userData)
 		}
 		
 		else {
-			out = morphTables[morphIndex].outputMorph(morphedWavetable::MorphType::fullCircle);
+			out = morphTables[morphIndex].outputMorph(morphType);
 		}
 		
 		scope.log(out);
@@ -455,7 +467,8 @@ void render(BelaContext *context, void *userData)
 		    rt_printf("Harmonic Amplitude To Add: %f\n", newHarmonicAmplitude);
 		    rt_printf("Selected Harmonic: %d\n", existingHarmonic);
 		    rt_printf("Selected Channel Gain: %f\n", gainKnob);
-		    rt_printf("Morph Index: %d", morphIndex);
+		    rt_printf("Morph Index: %d\n", morphIndex);
+		    rt_printf("Morph Type: %d", morphType);
 		}
 	}
 }
