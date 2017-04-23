@@ -2,6 +2,14 @@
 Harmonic Generating Wavetable Synthesizer
 Blake Teres
 2017
+
+To Do:
+
+- Dynamically initialize table morphing
+- Add fractional harmonics (inharmonics)
+- Add stereo options
+- Add volume control for voices
+- Add waveshaping
 */
 
 #include <Bela.h>
@@ -44,8 +52,7 @@ wavetable* voice1Ptr = &voice1;
 wavetable* voice2Ptr = &voice2;
 wavetable* voice3Ptr = &voice3;
 
-//morphedWavetable morphTable0(voice0Ptr, voice1Ptr, voice2Ptr, voice3Ptr);
-//morphedWavetable morphTable1(voice2Ptr, voice3Ptr);
+std::vector<morphedWavetable> morphTables;
 
 
 // Initialize control variables for potentiometer inputs
@@ -77,11 +84,15 @@ int voice3PitchChannel = 7;
 // Initialize control variables for button inputs
 int addHarmonic;
 int removeHarmonic;
-int pointSelect;
-int resetBezierCurver;
-int voiceToggle;
-int flipBoundaries;
+int scrollMorphs;
+int morphOnOff;
+
 bool removeFlag;
+bool morphFlag;
+bool morphOn;
+bool morphOnOffFlag;
+
+int morphIndex;
 
 int encoder0PinA = P8_15;
 int encoder0PinB = P8_16;
@@ -112,6 +123,15 @@ int encoder4PinB = P9_16;
 int encoder4Pos = -1;
 int encoder4PinALast = LOW;
 int encoder4Status = LOW;
+
+float out;
+float out0;
+float out1;
+float out2;
+float out3;
+float gainKnob;
+
+//----------------------------------------------------------------
 
 int positiveModulo(int i, int n) {
     return (i % n + n) % n;
@@ -260,6 +280,15 @@ int findExistingHarmonic (unsigned int selectedVoice, unsigned int index) {
 	return 0;
 }
 
+void adjustGain(int selectedVoice, float newGain, int pos, int posLast) {
+	switch(selectedVoice) {
+		case 0: voice0.setGain(newGain); break;
+		case 1: voice1.setGain(newGain); break;
+		case 2: voice2.setGain(newGain); break;
+		case 3: voice2.setGain(newGain); break;
+	}
+}
+
 bool setup(BelaContext *context, void *userData)
 {
 	// Check if analog channels are enabled
@@ -279,14 +308,33 @@ bool setup(BelaContext *context, void *userData)
 	gAudioFramesPerAnalogFrame = context->audioFrames / context->analogFrames;
 	
 	customWavetableHarmonics0.reserve(1024);
-	customWavetableAmplitudes0.reserve(1024);
 	customWavetableHarmonics1.reserve(1024);
-	customWavetableAmplitudes1.reserve(1024);
 	customWavetableHarmonics2.reserve(1024);
-	customWavetableAmplitudes2.reserve(1024);
 	customWavetableHarmonics3.reserve(1024);
+	customWavetableAmplitudes0.reserve(1024);
+	customWavetableAmplitudes1.reserve(1024);
+	customWavetableAmplitudes2.reserve(1024);
 	customWavetableAmplitudes3.reserve(1024);
 	
+	morphTables.reserve(11);
+	
+	morphTables[0] = morphedWavetable(voice0Ptr, voice1Ptr);
+	morphTables[1] = morphedWavetable(voice0Ptr, voice2Ptr);
+	morphTables[2] = morphedWavetable(voice0Ptr, voice3Ptr);
+	morphTables[3] = morphedWavetable(voice1Ptr, voice2Ptr);
+	morphTables[4] = morphedWavetable(voice1Ptr, voice3Ptr);
+	morphTables[5] = morphedWavetable(voice2Ptr, voice3Ptr);
+	morphTables[6] = morphedWavetable(voice0Ptr, voice1Ptr, voice2Ptr);
+	morphTables[7] = morphedWavetable(voice0Ptr, voice1Ptr, voice3Ptr);
+	morphTables[8] = morphedWavetable(voice0Ptr, voice2Ptr, voice3Ptr);
+	morphTables[9] = morphedWavetable(voice1Ptr, voice2Ptr, voice3Ptr);
+	morphTables[10] = morphedWavetable(voice0Ptr, voice1Ptr, voice2Ptr, voice3Ptr);
+	
+	morphIndex = 0;
+	
+	morphFlag = false;
+	morphOn = false;
+	morphOnOffFlag = false;
 	removeFlag = false;
 	
 	pinMode(context, 0, P8_07, INPUT);
@@ -311,12 +359,6 @@ bool setup(BelaContext *context, void *userData)
 
 void render(BelaContext *context, void *userData)
 {
-	float out;
-	float out0;
-	float out1;
-	float out2;
-	float out3;
-	float gain;
 	
 	unsigned int newHarmonic;
 	unsigned int existingHarmonic;
@@ -328,22 +370,20 @@ void render(BelaContext *context, void *userData)
 		handleEncoder(context, encoder1Status, encoder1PinA, encoder1PinALast, encoder1PinB, encoder1Pos, n);
 		handleEncoder(context, encoder2Status, encoder2PinA, encoder2PinALast, encoder2PinB, encoder2Pos, n);
 		handleEncoder(context, encoder3Status, encoder3PinA, encoder3PinALast, encoder3PinB, encoder3Pos, n);
-		//handleEncoder(context, encoder4Status, encoder4PinA, encoder4PinALast, encoder4PinB, encoder4Pos, n);
+		handleEncoder(context, encoder4Status, encoder4PinA, encoder4PinALast, encoder4PinB, encoder4Pos, n);
 		
 		addHarmonic = digitalRead(context, 0, P8_07);
 		removeHarmonic = digitalRead(context, 0, P8_08);
-		
-		/*
-		pointSelect = digitalRead(context, 0, P8_09);
-		resetBezierCurver = digitalRead(context, 0, P8_10);
-		voiceToggle = digitalRead(context, 0, P8_11);
-		flipBoundaries = digitalRead(context, 0, P8_12);
-		*/
+		scrollMorphs = digitalRead(context, 0, P8_09);
+		morphOnOff = digitalRead(context, 0, P8_10);
 		
 		newHarmonic = constrain(encoder0Pos, 1, MAX_HARMONICS);
 		newHarmonicAmplitude = constrain((encoder1Pos / 100.0), 0.0, 1.0);
 		selectedVoice = positiveModulo(encoder2Pos, 4);
 		existingHarmonic = findExistingHarmonic(selectedVoice, encoder3Pos);
+		
+		gainKnob = constrain((encoder4Pos / 100.0), 0.0, 1.0);
+		adjustGain(selectedVoice, gainKnob, encoder4Pos, encoder4PinALast);
 		
 		if (addHarmonic == HIGH) addHarmonicToVector(selectedVoice, newHarmonic, newHarmonicAmplitude);
 		if (removeHarmonic == LOW && removeFlag == false) removeFlag = true;
@@ -351,14 +391,24 @@ void render(BelaContext *context, void *userData)
 			removeFlag = false;
 			removeHarmonicFromVector(selectedVoice, existingHarmonic);
 		}
+		if (scrollMorphs == LOW && morphFlag == false) morphFlag = true;
+		if (scrollMorphs == HIGH && morphFlag == true) {
+			morphIndex = (morphIndex + 1) % 11;
+			morphFlag = false;
+		}
+		if (morphOnOff == LOW && morphOnOffFlag == false) morphOnOffFlag = true;
+		if (morphOnOff == HIGH && morphOnOffFlag == true) {
+			morphOn = !morphOn;
+			morphOnOffFlag = false;
+		}
 		
 		
 		if(!(n % gAudioFramesPerAnalogFrame)) {
-			//morphSpeed0 = analogRead(context, n/gAudioFramesPerAnalogFrame, morphSpeed0Channel);
-			//morphTable0.setMorphSpeed(morphSpeed0);
+			morphSpeed0 = analogRead(context, n/gAudioFramesPerAnalogFrame, morphSpeed0Channel);
+			morphTables[0].setMorphSpeed(morphSpeed0);
 			
-			//morphSpeed1 = analogRead(context, n/gAudioFramesPerAnalogFrame, morphSpeed1Channel);
-			//morphTable1.setMorphSpeed(morphSpeed1);
+			morphSpeed1 = analogRead(context, n/gAudioFramesPerAnalogFrame, morphSpeed1Channel);
+			morphTables[1].setMorphSpeed(morphSpeed1);
 			
 			waveShaper0 = analogRead(context, n/gAudioFramesPerAnalogFrame, waveShaper0Channel);
 			waveShaper1 = analogRead(context, n/gAudioFramesPerAnalogFrame, waveShaper1Channel);
@@ -376,19 +426,20 @@ void render(BelaContext *context, void *userData)
 			voice3.getPitch(voice3Pitch);
 		}
 		
-		out0 = voice0.getTableOut() * 0.25;
-		out1 = voice1.getTableOut() * 0.25;
-		out2 = voice2.getTableOut() * 0.25;
-		out3 = voice3.getTableOut() * 0.25;
+		if (!morphOn) {
+			out0 = voice0.getTableOut();
+			out1 = voice1.getTableOut();
+			out2 = voice2.getTableOut();
+			out3 = voice3.getTableOut();
+			
+			out = (out0 + out1 + out2 + out3) * 0.25;
+		}
 		
-		//out0 = morphTable0.outputMorph(morphSpeed0, morphedWavetable::MorphType::backAndForth);
-		//out1 = morphTable1.outputMorph(morphSpeed1, morphedWavetable::MorphType::random);
+		else {
+			out = morphTables[morphIndex].outputMorph(morphSpeed0, morphedWavetable::MorphType::backAndForth);
+		}
 		
-		//gain = 0.25;
-		
-		out = out0 + out1 + out2 + out3;
-		scope.log(out0);
-		//out = out0 * 0.2;
+		scope.log(out);
 		
 		for(unsigned int channel = 0; channel < context->audioOutChannels; channel++) {
 			audioWrite(context, n, channel, out);
@@ -405,6 +456,8 @@ void render(BelaContext *context, void *userData)
 		    rt_printf("Harmonic To Add: %d\n", newHarmonic);
 		    rt_printf("Harmonic Amplitude To Add: %f\n", newHarmonicAmplitude);
 		    rt_printf("Selected Harmonic: %d\n", existingHarmonic);
+		    rt_printf("Selected Channel Gain: %f\n", gainKnob);
+		    rt_printf("Morph Index: %d", morphIndex);
 		}
 	}
 }
