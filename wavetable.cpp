@@ -9,6 +9,9 @@ wavetable::wavetable(int basicWaveform) {
 	
 	// Initialize readIndex at 0
 	readIndex = 0.0;
+	
+	// Intialize gain
+	gain = 1.0;
 
 	// Put pointers to each wavetable in the wavetable container
 	wavetableContainer[0] = wavetable0;
@@ -44,7 +47,7 @@ wavetable::wavetable(int basicWaveform) {
 float wavetable::getTableOut() {
 	
 	// calculate interpolated wavetable value
-	float out = linearInterpolate();
+	float out = linearInterpolate() * gain;
 	
 	// increment index
 	readIndex += pitch;
@@ -216,4 +219,10 @@ void wavetable::clearAllTables() {
 	}
 }
 
+float wavetable::getGain() {
+	return gain;
+}
 
+void wavetable::setGain(float newGain) {
+	gain = newGain;
+}

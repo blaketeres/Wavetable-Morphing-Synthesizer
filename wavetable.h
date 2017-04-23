@@ -62,6 +62,12 @@ public:
 	// Fills the tables with 0s
 	void clearAllTables();
 	
+	// Gets current gain level of voice
+	float getGain();
+	
+	// Sets current gain level of voice
+	void setGain(float newGain);
+	
 	// Array of pointers to all of the wavetables
 	float* wavetableContainer[NUM_WAVETABLES_PER_VOICE];
 	
@@ -89,6 +95,8 @@ private:
 	
 	float pitch;
 	float cutoffFreq;
+	
+	float gain;
 };
 
 #endif
