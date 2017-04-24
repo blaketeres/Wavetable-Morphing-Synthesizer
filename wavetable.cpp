@@ -165,10 +165,6 @@ void wavetable::fillSine() {
 }
 
 void wavetable::fillVectorWaveform(std::vector<int>& listOfHarmonics, std::vector<float>& listOfAmplitudes) {
-	
-	// check that every harmonic has an amplitude value and vice versa
-	//if (listOfHarmonics.size() != listOfAmplitudes.size()) return;
-	
 	int numHarmonics = listOfHarmonics.size();
 	
 	// loop through all tables
