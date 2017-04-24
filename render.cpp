@@ -41,16 +41,19 @@ std::vector<float> customWavetableAmplitudes2;
 std::vector<int> customWavetableHarmonics3;
 std::vector<float> customWavetableAmplitudes3;
 
+// Initialize harmonics/amplitudes containers for easy access in functions
+std::vector<int>* allWavetableHarmonics[4];
+std::vector<float>* allWavetableAmplitudes[4];
+
 wavetable voice0;
 wavetable voice1;
 wavetable voice2;
 wavetable voice3;
 
-wavetable* voice0Ptr = &voice0;
-wavetable* voice1Ptr = &voice1;
-wavetable* voice2Ptr = &voice2;
-wavetable* voice3Ptr = &voice3;
+// Initialize voice container for easy access in functions
+wavetable* allVoices[4] = {&voice0, &voice1, &voice2, &voice3};
 
+// Initialize morphtable vector
 std::vector<morphedWavetable> morphTables;
 
 
@@ -171,121 +174,30 @@ void handleEncoder(BelaContext *context, int encoderStatus, int encoderPinA, int
 }
 
 void addHarmonicToVector(unsigned int selectedVoice, unsigned int harmonicMultiple, float harmonicAmplitude) {
-	switch (selectedVoice) {
-		case 0:{
-			if(std::find(customWavetableHarmonics0.begin(), customWavetableHarmonics0.end(), harmonicMultiple) != customWavetableHarmonics0.end())
-			    break;
-			else {
-			customWavetableHarmonics0.push_back(harmonicMultiple);
-			customWavetableAmplitudes0.push_back(harmonicAmplitude);
-			voice0.fillVectorWaveform(customWavetableHarmonics0, customWavetableAmplitudes0);
-			break;
-			}
-		}
-		case 1: {
-			if(std::find(customWavetableHarmonics1.begin(), customWavetableHarmonics1.end(), harmonicMultiple) != customWavetableHarmonics1.end())
-			    break;
-			else {
-			customWavetableHarmonics1.push_back(harmonicMultiple);
-			customWavetableAmplitudes1.push_back(harmonicAmplitude);
-			voice1.fillVectorWaveform(customWavetableHarmonics1, customWavetableAmplitudes1);
-			break;
-			}
-		}
-		case 2: {
-			if(std::find(customWavetableHarmonics2.begin(), customWavetableHarmonics2.end(), harmonicMultiple) != customWavetableHarmonics2.end())
-			    break;
-			else {
-			customWavetableHarmonics2.push_back(harmonicMultiple);
-			customWavetableAmplitudes2.push_back(harmonicAmplitude);
-			voice2.fillVectorWaveform(customWavetableHarmonics2, customWavetableAmplitudes2);
-			break;
-			}
-		}
-		case 3: {
-			if(std::find(customWavetableHarmonics3.begin(), customWavetableHarmonics3.end(), harmonicMultiple) != customWavetableHarmonics3.end())
-			    break;
-			else {
-			customWavetableHarmonics3.push_back(harmonicMultiple);
-			customWavetableAmplitudes3.push_back(harmonicAmplitude);
-			voice3.fillVectorWaveform(customWavetableHarmonics3, customWavetableAmplitudes3);
-			break;
-			}
-		}
+	if (std::find(allWavetableHarmonics[selectedVoice]->begin(), allWavetableHarmonics[selectedVoice]->end(), harmonicMultiple) != allWavetableHarmonics[selectedVoice]->end())
+		return;
+	else {
+		allWavetableHarmonics[selectedVoice]->push_back(harmonicMultiple);
+		allWavetableAmplitudes[selectedVoice]->push_back(harmonicAmplitude);
+		allVoices[selectedVoice]->fillVectorWaveform(*allWavetableHarmonics[selectedVoice], *allWavetableAmplitudes[selectedVoice]);
 	}
 }
 
 void removeHarmonicFromVector(unsigned int selectedVoice, unsigned int harmonicMultiple) {
-	switch (selectedVoice) {
-		case 0: {
-			std::vector<int>::iterator position = std::find(customWavetableHarmonics0.begin(), customWavetableHarmonics0.end(), harmonicMultiple);
-			if (position != customWavetableHarmonics0.end()) {
-    			customWavetableHarmonics0.erase(position);
-    			customWavetableAmplitudes0.erase(customWavetableAmplitudes0.begin() + *position);
-    			voice0.clearAllTables();
-				voice0.fillVectorWaveform(customWavetableHarmonics0, customWavetableAmplitudes0);
-			}
-			break;
-		}
-		case 1: {
-			std::vector<int>::iterator position = std::find(customWavetableHarmonics1.begin(), customWavetableHarmonics1.end(), harmonicMultiple);
-			if (position != customWavetableHarmonics1.end()) {
-    			customWavetableHarmonics1.erase(position);
-    			customWavetableAmplitudes1.erase(customWavetableAmplitudes1.begin() + *position);
-    			voice1.clearAllTables();
-				voice1.fillVectorWaveform(customWavetableHarmonics1, customWavetableAmplitudes1);
-			}
-			break;
-		}
-		case 2: {
-			std::vector<int>::iterator position = std::find(customWavetableHarmonics2.begin(), customWavetableHarmonics2.end(), harmonicMultiple);
-			if (position != customWavetableHarmonics2.end()) {
-    			customWavetableHarmonics2.erase(position);
-    			customWavetableAmplitudes2.erase(customWavetableAmplitudes2.begin() + *position);
-    			voice2.clearAllTables();
-				voice2.fillVectorWaveform(customWavetableHarmonics2, customWavetableAmplitudes2);
-			}
-			break;
-		}
-		case 3: {
-			std::vector<int>::iterator position = std::find(customWavetableHarmonics3.begin(), customWavetableHarmonics3.end(), harmonicMultiple);
-			if (position != customWavetableHarmonics3.end()) {
-    			customWavetableHarmonics3.erase(position);
-    			customWavetableAmplitudes3.erase(customWavetableAmplitudes3.begin() + *position);
-    			voice3.clearAllTables();
-				voice3.fillVectorWaveform(customWavetableHarmonics3, customWavetableAmplitudes3);
-			}
-			break;
-		}
+	std::vector<int>::iterator position;
+	position = std::find(allWavetableHarmonics[selectedVoice]->begin(), allWavetableHarmonics[selectedVoice]->end(), harmonicMultiple);
+	if (position != allWavetableHarmonics[selectedVoice]->end()) {
+		allWavetableHarmonics[selectedVoice]->erase(position);
+		allWavetableAmplitudes[selectedVoice]->erase(allWavetableAmplitudes[selectedVoice]->begin() + *position);
+		allVoices[selectedVoice]->clearAllTables();
+		allVoices[selectedVoice]->fillVectorWaveform(*allWavetableHarmonics[selectedVoice], *allWavetableAmplitudes[selectedVoice]);
 	}
 }
 
 float findExistingHarmonic (unsigned int selectedVoice, unsigned int index) {
-	switch (selectedVoice) {
-		case 0: {
-			if (customWavetableHarmonics0.size() > 0) {
-				index = index % customWavetableHarmonics0.size();
-				return customWavetableHarmonics0[index];
-			}
-		}
-		case 1: {
-			if (customWavetableHarmonics1.size() > 0) {
-				index = index % customWavetableHarmonics1.size();
-				return customWavetableHarmonics1[index];
-			}
-		}
-		case 2: {
-			if (customWavetableHarmonics2.size() > 0) {
-				index = index % customWavetableHarmonics2.size();
-				return customWavetableHarmonics2[index];
-			}
-		}
-		case 3: {
-			if (customWavetableHarmonics3.size() > 0) {
-				index = index % customWavetableHarmonics3.size();
-				return customWavetableHarmonics3[index];
-			}
-		}
+	if (allWavetableHarmonics[selectedVoice]->size() > 0) {
+		index = index % allWavetableHarmonics[selectedVoice]->size();
+		return (*allWavetableHarmonics[selectedVoice])[index];
 	}
 	return 0;
 }
@@ -317,6 +229,15 @@ bool setup(BelaContext *context, void *userData)
 	scope.setup(1, context->audioSampleRate);
 	gAudioFramesPerAnalogFrame = context->audioFrames / context->analogFrames;
 	
+	allWavetableHarmonics[0] = &customWavetableHarmonics0;
+	allWavetableHarmonics[1] = &customWavetableHarmonics1;
+	allWavetableHarmonics[2] = &customWavetableHarmonics2;
+	allWavetableHarmonics[3] = &customWavetableHarmonics3;
+	allWavetableAmplitudes[0] = &customWavetableAmplitudes0;
+	allWavetableAmplitudes[1] = &customWavetableAmplitudes1;
+	allWavetableAmplitudes[2] = &customWavetableAmplitudes2;
+	allWavetableAmplitudes[3] = &customWavetableAmplitudes3;
+	
 	customWavetableHarmonics0.reserve(1024);
 	customWavetableHarmonics1.reserve(1024);
 	customWavetableHarmonics2.reserve(1024);
@@ -328,17 +249,18 @@ bool setup(BelaContext *context, void *userData)
 	
 	morphTables.reserve(11);
 	
-	morphTables[0] = morphedWavetable(voice0Ptr, voice1Ptr);
-	morphTables[1] = morphedWavetable(voice0Ptr, voice2Ptr);
-	morphTables[2] = morphedWavetable(voice0Ptr, voice3Ptr);
-	morphTables[3] = morphedWavetable(voice1Ptr, voice2Ptr);
-	morphTables[4] = morphedWavetable(voice1Ptr, voice3Ptr);
-	morphTables[5] = morphedWavetable(voice2Ptr, voice3Ptr);
-	morphTables[6] = morphedWavetable(voice0Ptr, voice1Ptr, voice2Ptr);
-	morphTables[7] = morphedWavetable(voice0Ptr, voice1Ptr, voice3Ptr);
-	morphTables[8] = morphedWavetable(voice0Ptr, voice2Ptr, voice3Ptr);
-	morphTables[9] = morphedWavetable(voice1Ptr, voice2Ptr, voice3Ptr);
-	morphTables[10] = morphedWavetable(voice0Ptr, voice1Ptr, voice2Ptr, voice3Ptr);
+	// Predetermine morphing setup. Need better UI to do this dynamically
+	morphTables[0] = morphedWavetable(allVoices[0], allVoices[1]);
+	morphTables[1] = morphedWavetable(allVoices[0], allVoices[2]);
+	morphTables[2] = morphedWavetable(allVoices[0], allVoices[3]);
+	morphTables[3] = morphedWavetable(allVoices[1], allVoices[2]);
+	morphTables[4] = morphedWavetable(allVoices[1], allVoices[3]);
+	morphTables[5] = morphedWavetable(allVoices[2], allVoices[3]);
+	morphTables[6] = morphedWavetable(allVoices[0], allVoices[1], allVoices[2]);
+	morphTables[7] = morphedWavetable(allVoices[0], allVoices[1], allVoices[3]);
+	morphTables[8] = morphedWavetable(allVoices[0], allVoices[2], allVoices[3]);
+	morphTables[9] = morphedWavetable(allVoices[1], allVoices[2], allVoices[3]);
+	morphTables[10] = morphedWavetable(allVoices[0], allVoices[1], allVoices[2], allVoices[3]);
 	
 	morphIndex = 0;
 	
