@@ -9,12 +9,14 @@ To Do:
 - Perfect volume control for voices
 - Add waveshaping
 - Add save/load feature
+- Fix HF noise
 */
 
 #include <Bela.h>
 #include <Scope.h>
 #include <algorithm>
 #include <vector>
+#include <math.h>
 #include "wavetable.h"
 #include "morphedWavetable.h"
 
@@ -170,6 +172,10 @@ float gainKnob;
 
 //----------------------------------------------------------------
 
+void waveshapePow5(float& audioData, float amount) {
+	audioData = (audioData * (1 - amount)) + (powf(audioData, 5) * amount);
+}
+
 int positiveModulo(int i, int n) {
     return (i % n + n) % n;
 }
@@ -261,19 +267,6 @@ bool setup(BelaContext *context, void *userData)
 	customWavetableAmplitudes1.reserve(1024);
 	customWavetableAmplitudes2.reserve(1024);
 	customWavetableAmplitudes3.reserve(1024);
-	
-	// Predetermine morphing setup. Need better UI to do this dynamically
-	morphTables[0] = morphedWavetable(allVoices[0], allVoices[1]);
-	morphTables[1] = morphedWavetable(allVoices[0], allVoices[2]);
-	morphTables[2] = morphedWavetable(allVoices[0], allVoices[3]);
-	morphTables[3] = morphedWavetable(allVoices[1], allVoices[2]);
-	morphTables[4] = morphedWavetable(allVoices[1], allVoices[3]);
-	morphTables[5] = morphedWavetable(allVoices[2], allVoices[3]);
-	morphTables[6] = morphedWavetable(allVoices[0], allVoices[1], allVoices[2]);
-	morphTables[7] = morphedWavetable(allVoices[0], allVoices[1], allVoices[3]);
-	morphTables[8] = morphedWavetable(allVoices[0], allVoices[2], allVoices[3]);
-	morphTables[9] = morphedWavetable(allVoices[1], allVoices[2], allVoices[3]);
-	morphTables[10] = morphedWavetable(allVoices[0], allVoices[1], allVoices[2], allVoices[3]);
 	
 	pinMode(context, 0, P8_07, INPUT);
 	pinMode(context, 0, P8_08, INPUT);
@@ -378,7 +371,7 @@ void render(BelaContext *context, void *userData)
 			out = morphTables[morphIndex].outputMorph(morphType);
 		}
 		
-		scope.log(out);
+		waveshapePow5(out, waveShaper0);
 		
 		for(unsigned int channel = 0; channel < context->audioOutChannels; channel++) {
 			audioWrite(context, n, channel, out);
