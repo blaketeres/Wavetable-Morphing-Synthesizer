@@ -42,8 +42,19 @@ std::vector<int> customWavetableHarmonics3;
 std::vector<float> customWavetableAmplitudes3;
 
 // Initialize harmonics/amplitudes containers for easy access in functions
-std::vector<int>* allWavetableHarmonics[4];
-std::vector<float>* allWavetableAmplitudes[4];
+std::vector<int>* allWavetableHarmonics[4] = {
+	&customWavetableHarmonics0,
+	&customWavetableHarmonics1,
+	&customWavetableHarmonics2,
+	&customWavetableHarmonics3
+};
+
+std::vector<float>* allWavetableAmplitudes[4] = {
+	&customWavetableAmplitudes0,
+	&customWavetableAmplitudes1,
+	&customWavetableAmplitudes2,
+	&customWavetableAmplitudes3
+};
 
 wavetable voice0;
 wavetable voice1;
@@ -53,8 +64,20 @@ wavetable voice3;
 // Initialize voice container for easy access in functions
 wavetable* allVoices[4] = {&voice0, &voice1, &voice2, &voice3};
 
-// Initialize morphtable vector
-std::vector<morphedWavetable> morphTables;
+// Initialize morphtable container for easy access
+morphedWavetable morphTables[11] = {
+	morphedWavetable(allVoices[0], allVoices[1]),
+	morphedWavetable(allVoices[0], allVoices[2]),
+	morphedWavetable(allVoices[0], allVoices[3]),
+	morphedWavetable(allVoices[1], allVoices[2]),
+	morphedWavetable(allVoices[1], allVoices[3]),
+	morphedWavetable(allVoices[2], allVoices[3]),
+	morphedWavetable(allVoices[0], allVoices[1], allVoices[2]),
+	morphedWavetable(allVoices[0], allVoices[1], allVoices[3]),
+	morphedWavetable(allVoices[0], allVoices[2], allVoices[3]),
+	morphedWavetable(allVoices[1], allVoices[2], allVoices[3]),
+	morphedWavetable(allVoices[0], allVoices[1], allVoices[2], allVoices[3])
+};
 
 
 // Initialize control variables for potentiometer inputs
@@ -90,13 +113,14 @@ int scrollMorphs;
 int morphOnOff;
 int morphTypeButton;
 int morphType;
-int morphIndex;
 
-bool removeFlag;
-bool morphFlag;
-bool morphOn;
-bool morphOnOffFlag;
-bool morphTypeFlag;
+int morphIndex = 0;
+
+bool removeFlag = false;
+bool morphFlag = false;
+bool morphOn = false;
+bool morphOnOffFlag = false;
+bool morphTypeFlag = false;
 
 
 // Initialize rotary encoders
@@ -229,15 +253,6 @@ bool setup(BelaContext *context, void *userData)
 	scope.setup(1, context->audioSampleRate);
 	gAudioFramesPerAnalogFrame = context->audioFrames / context->analogFrames;
 	
-	allWavetableHarmonics[0] = &customWavetableHarmonics0;
-	allWavetableHarmonics[1] = &customWavetableHarmonics1;
-	allWavetableHarmonics[2] = &customWavetableHarmonics2;
-	allWavetableHarmonics[3] = &customWavetableHarmonics3;
-	allWavetableAmplitudes[0] = &customWavetableAmplitudes0;
-	allWavetableAmplitudes[1] = &customWavetableAmplitudes1;
-	allWavetableAmplitudes[2] = &customWavetableAmplitudes2;
-	allWavetableAmplitudes[3] = &customWavetableAmplitudes3;
-	
 	customWavetableHarmonics0.reserve(1024);
 	customWavetableHarmonics1.reserve(1024);
 	customWavetableHarmonics2.reserve(1024);
@@ -246,8 +261,6 @@ bool setup(BelaContext *context, void *userData)
 	customWavetableAmplitudes1.reserve(1024);
 	customWavetableAmplitudes2.reserve(1024);
 	customWavetableAmplitudes3.reserve(1024);
-	
-	morphTables.reserve(11);
 	
 	// Predetermine morphing setup. Need better UI to do this dynamically
 	morphTables[0] = morphedWavetable(allVoices[0], allVoices[1]);
@@ -261,14 +274,6 @@ bool setup(BelaContext *context, void *userData)
 	morphTables[8] = morphedWavetable(allVoices[0], allVoices[2], allVoices[3]);
 	morphTables[9] = morphedWavetable(allVoices[1], allVoices[2], allVoices[3]);
 	morphTables[10] = morphedWavetable(allVoices[0], allVoices[1], allVoices[2], allVoices[3]);
-	
-	morphIndex = 0;
-	
-	morphFlag = false;
-	morphOn = false;
-	morphOnOffFlag = false;
-	removeFlag = false;
-	morphTypeFlag = false;
 	
 	pinMode(context, 0, P8_07, INPUT);
 	pinMode(context, 0, P8_08, INPUT);
